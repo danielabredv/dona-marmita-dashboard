@@ -21,8 +21,12 @@ export default function Sidebar() {
       href: "/pedidos-dia"
     },
     {
-      nome: "Clientes Pendentes",
+      nome: "Pendentes",
       href: "/pendentes"
+    },
+    {
+      nome: "Central Financeira",
+      href: "/financeiro"
     }
   ]
 
@@ -41,7 +45,7 @@ export default function Sidebar() {
           <Link
             key={link.href}
             href={link.href}
-            className={`p-3 rounded-lg transition ${
+            className={`p-3 rounded-xl transition ${
               pathname === link.href
                 ? "bg-white text-black"
                 : "hover:bg-zinc-800"
