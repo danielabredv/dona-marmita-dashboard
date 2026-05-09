@@ -1,22 +1,16 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
-import { supabase } from "@/lib/supabase"
 import Sidebar from "@/components/ui/Sidebar"
+import { supabase } from "@/lib/supabase"
 
-export default function Home() {
+export default function FinanceiroPage() {
 
-  const router = useRouter()
-
-  const [cliente, setCliente] = useState("")
-  const [vendedor, setVendedor] = useState("")
-  const [valor, setValor] = useState("")
-  const [status, setStatus] = useState("Pendente")
+  const [valorReal, setValorReal] = useState("")
+  const [observacao, setObservacao] = useState("")
 
   const [vendas, setVendas] = useState<any[]>([])
-
-  const [usuario, setUsuario] = useState<any>(null)
+  const [fechamentos, setFechamentos] = useState<any[]>([])
 
   // BUSCAR VENDAS
 
@@ -26,123 +20,76 @@ export default function Home() {
       data: { user }
     } = await supabase.auth.getUser()
 
-    if (!user) {
-      console.log("Usuário não encontrado")
-      return
-    }
+    if (!user) return
 
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from("vendas")
       .select("*")
       .eq("user_id", user.id)
-      .order("id", { ascending: false })
-
-    if (error) {
-      console.log(error)
-      return
-    }
 
     setVendas(data || [])
   }
 
-  // SALVAR VENDA
+  // BUSCAR FECHAMENTOS
 
-  async function salvarVenda() {
-
-    if (!cliente || !vendedor || !valor) {
-      alert("Preencha todos os campos")
-      return
-    }
+  async function buscarFechamentos() {
 
     const {
       data: { user }
     } = await supabase.auth.getUser()
 
-    if (!user) {
-      alert("Usuário não autenticado")
-      return
-    }
+    if (!user) return
 
-    const { error } = await supabase
-      .from("vendas")
+    const { data } = await supabase
+      .from("fechamentos")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("id", { ascending: false })
+
+    setFechamentos(data || [])
+  }
+
+  // SALVAR FECHAMENTO
+
+  async function salvarFechamento() {
+
+    const {
+      data: { user }
+    } = await supabase.auth.getUser()
+
+    if (!user) return
+
+    await supabase
+      .from("fechamentos")
       .insert([
         {
-          cliente,
-          vendedor,
-          valor: Number(valor),
-          status,
+          valor_real: Number(valorReal),
+          observacao,
           user_id: user.id
         }
       ])
 
-    if (error) {
-      console.log(error)
-      alert("Erro ao salvar")
-      return
-    }
+    setValorReal("")
+    setObservacao("")
 
-    alert("Venda salva com sucesso")
-
-    setCliente("")
-    setVendedor("")
-    setValor("")
-    setStatus("Pendente")
-
-    buscarVendas()
+    buscarFechamentos()
   }
-
-  // VERIFICAR LOGIN
 
   useEffect(() => {
 
-    async function verificarUsuario() {
-
-      const {
-        data: { user }
-      } = await supabase.auth.getUser()
-
-      if (!user) {
-        router.push("/login")
-        return
-      }
-
-      setUsuario(user)
-
-      buscarVendas()
-    }
-
-    verificarUsuario()
+    buscarVendas()
+    buscarFechamentos()
 
   }, [])
 
-  // RESUMO FINANCEIRO
+  // DATA HOJE
 
-  const totalVendido = vendas.reduce(
-    (total, venda) => total + Number(venda.valor),
-    0
-  )
+  const hoje = new Date()
+    .toLocaleDateString("pt-BR")
 
-  const totalPago = vendas
-    .filter((venda) => venda.status === "Pago")
-    .reduce(
-      (total, venda) => total + Number(venda.valor),
-      0
-    )
+  // VENDAS DE HOJE
 
-  const totalPendente = vendas
-    .filter((venda) => venda.status === "Pendente")
-    .reduce(
-      (total, venda) => total + Number(venda.valor),
-      0
-    )
-
-  const quantidadeVendas = vendas.length
-
-  // PEDIDOS DO DIA
-
-  const hoje = new Date().toLocaleDateString("pt-BR")
-
-  const pedidosHoje = vendas.filter((venda) => {
+  const vendasHoje = vendas.filter((venda) => {
 
     const dataVenda = new Date(
       venda.created_at
@@ -151,262 +98,206 @@ export default function Home() {
     return dataVenda === hoje
   })
 
-  // ÚLTIMAS VENDAS
+  // TOTAL SISTEMA
 
-  const ultimasVendas = vendas.slice(0, 5)
+  const totalSistemaHoje = vendasHoje.reduce(
+    (total, venda) =>
+      total + Number(venda.valor),
+    0
+  )
 
-  // NOME DO USUÁRIO
+  // FECHAMENTO DE HOJE
 
-  const nomeUsuario = usuario?.email
-    ?.split("@")[0]
+  const fechamentoHoje = fechamentos.find((item) => {
+
+    const dataFechamento = new Date(
+      item.created_at
+    ).toLocaleDateString("pt-BR")
+
+    return dataFechamento === hoje
+  })
+
+  const valorFechamento =
+    fechamentoHoje?.valor_real || 0
+
+  // DIFERENÇA
+
+  const diferenca =
+    valorFechamento - totalSistemaHoje
+
+  // DATA DE ONTEM
+
+  const ontem = new Date()
+
+  ontem.setDate(ontem.getDate() - 1)
+
+  const dataOntem =
+    ontem.toLocaleDateString("pt-BR")
+
+  // FECHAMENTO HOJE
+
+  const fechamentoAtualObj =
+    fechamentos.find((item) => {
+
+      const data = new Date(
+        item.created_at
+      ).toLocaleDateString("pt-BR")
+
+      return data === hoje
+    })
+
+  // FECHAMENTO ONTEM
+
+  const fechamentoOntemObj =
+    fechamentos.find((item) => {
+
+      const data = new Date(
+        item.created_at
+      ).toLocaleDateString("pt-BR")
+
+      return data === dataOntem
+    })
+
+  const fechamentoAtual =
+    fechamentoAtualObj?.valor_real || 0
+
+  const fechamentoOntem =
+    fechamentoOntemObj?.valor_real || 0
+
+  // CRESCIMENTO %
+
+  const crescimento =
+    fechamentoOntem > 0
+      ? (
+          (
+            (fechamentoAtual - fechamentoOntem)
+            / fechamentoOntem
+          ) * 100
+        ).toFixed(1)
+      : 0
 
   return (
 
     <div className="flex min-h-screen bg-zinc-100">
 
-      {/* SIDEBAR */}
-
       <Sidebar />
-
-      {/* CONTEÚDO */}
 
       <main className="flex-1 p-10">
 
-        {/* TOPO */}
-
-        <div className="flex items-center justify-between mb-10">
-
-          <div>
-
-            <h1 className="text-4xl font-bold">
-              Dashboard
-            </h1>
-
-            <div className="flex items-center gap-3 mt-3">
-
-              <div className="w-10 h-10 rounded-full bg-black text-white flex items-center justify-center font-bold">
-                {nomeUsuario?.charAt(0).toUpperCase()}
-              </div>
-
-              <div>
-
-                <p className="font-semibold capitalize">
-                  {nomeUsuario}
-                </p>
-
-                <p className="text-sm text-gray-500">
-                  Vendedor
-                </p>
-
-              </div>
-
-            </div>
-
-          </div>
-
-          <button
-            onClick={async () => {
-              await supabase.auth.signOut()
-              router.push("/login")
-            }}
-            className="bg-red-500 text-white px-4 py-2 rounded-xl hover:opacity-90"
-          >
-            Sair
-          </button>
-
-        </div>
+        <h1 className="text-4xl font-bold mb-8">
+          Central Financeira
+        </h1>
 
         {/* CARDS */}
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-5 mb-10">
 
-          <div className="bg-white rounded-2xl p-5 shadow-sm">
+          {/* SISTEMA */}
+
+          <div className="bg-white rounded-2xl p-6 shadow-sm">
 
             <p className="text-gray-500 mb-2">
-              Total Vendido
+              Sistema Hoje
             </p>
 
-            <h2 className="text-3xl font-bold">
-              R$ {totalVendido}
+            <h2 className="text-4xl font-bold">
+              R$ {totalSistemaHoje}
             </h2>
 
           </div>
 
-          <div className="bg-white rounded-2xl p-5 shadow-sm">
+          {/* FECHAMENTO */}
+
+          <div className="bg-white rounded-2xl p-6 shadow-sm">
 
             <p className="text-gray-500 mb-2">
-              Total Pago
+              Fechamento Real
             </p>
 
-            <h2 className="text-3xl font-bold text-green-600">
-              R$ {totalPago}
+            <h2 className="text-4xl font-bold text-green-600">
+              R$ {valorFechamento}
             </h2>
 
           </div>
 
-          <div className="bg-white rounded-2xl p-5 shadow-sm">
+          {/* DIFERENÇA */}
+
+          <div className="bg-white rounded-2xl p-6 shadow-sm">
 
             <p className="text-gray-500 mb-2">
-              Pendente
+              Diferença
             </p>
 
-            <h2 className="text-3xl font-bold text-yellow-600">
-              R$ {totalPendente}
+            <h2
+              className={`text-4xl font-bold ${
+                diferenca >= 0
+                  ? "text-green-600"
+                  : "text-red-600"
+              }`}
+            >
+              R$ {diferenca}
             </h2>
 
           </div>
 
-          <div className="bg-white rounded-2xl p-5 shadow-sm">
+          {/* CRESCIMENTO */}
+
+          <div className="bg-white rounded-2xl p-6 shadow-sm">
 
             <p className="text-gray-500 mb-2">
-              Pedidos Hoje
+              Crescimento
             </p>
 
-            <h2 className="text-3xl font-bold">
-              {pedidosHoje.length}
+            <h2
+              className={`text-4xl font-bold ${
+                Number(crescimento) >= 0
+                  ? "text-green-600"
+                  : "text-red-600"
+              }`}
+            >
+              {Number(crescimento) >= 0 ? "+" : ""}
+              {crescimento}%
             </h2>
 
           </div>
 
         </div>
 
-        {/* GRID PRINCIPAL */}
+        {/* FORMULÁRIO */}
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="bg-white rounded-2xl p-6 shadow-sm max-w-xl mb-10">
 
-          {/* NOVA VENDA */}
+          <h2 className="text-2xl font-bold mb-6">
+            Fechamento do Dia
+          </h2>
 
-          <div className="bg-white rounded-2xl p-6 shadow-sm">
+          <div className="flex flex-col gap-4">
 
-            <h2 className="text-2xl font-bold mb-6">
-              Nova Venda
-            </h2>
+            <input
+              type="number"
+              placeholder="Valor real do dia"
+              value={valorReal}
+              onChange={(e) =>
+                setValorReal(e.target.value)
+              }
+              className="border p-3 rounded-xl"
+            />
 
-            <div className="flex flex-col gap-4">
+            <textarea
+              placeholder="Observação"
+              value={observacao}
+              onChange={(e) =>
+                setObservacao(e.target.value)
+              }
+              className="border p-3 rounded-xl"
+            />
 
-              <input
-                type="text"
-                placeholder="Cliente"
-                value={cliente}
-                onChange={(e) =>
-                  setCliente(e.target.value)
-                }
-                className="border p-3 rounded-xl"
-              />
-
-              <input
-                type="text"
-                placeholder="Vendedor"
-                value={vendedor}
-                onChange={(e) =>
-                  setVendedor(e.target.value)
-                }
-                className="border p-3 rounded-xl"
-              />
-
-              <input
-                type="number"
-                placeholder="Valor"
-                value={valor}
-                onChange={(e) =>
-                  setValor(e.target.value)
-                }
-                className="border p-3 rounded-xl"
-              />
-
-              <select
-                value={status}
-                onChange={(e) =>
-                  setStatus(e.target.value)
-                }
-                className="border p-3 rounded-xl"
-              >
-                <option>Pendente</option>
-                <option>Pago</option>
-              </select>
-
-              <button
-                onClick={salvarVenda}
-                className="bg-black text-white p-3 rounded-xl hover:opacity-90"
-              >
-                Salvar Venda
-              </button>
-
-            </div>
-
-          </div>
-
-          {/* ÚLTIMAS VENDAS */}
-
-          <div className="lg:col-span-2 bg-white rounded-2xl p-6 shadow-sm">
-
-            <div className="flex items-center justify-between mb-6">
-
-              <h2 className="text-2xl font-bold">
-                Últimas Vendas
-              </h2>
-
-              <button
-                onClick={() =>
-                  router.push("/vendas")
-                }
-                className="text-sm bg-black text-white px-4 py-2 rounded-xl"
-              >
-                Ver Todas
-              </button>
-
-            </div>
-
-            <div className="flex flex-col gap-4">
-
-              {ultimasVendas.length === 0 && (
-                <p>Nenhuma venda encontrada.</p>
-              )}
-
-              {ultimasVendas.map((venda) => (
-
-                <div
-                  key={venda.id}
-                  className="border rounded-xl p-4"
-                >
-
-                  <div className="flex items-center justify-between">
-
-                    <div>
-
-                      <h3 className="font-bold text-lg">
-                        {venda.cliente}
-                      </h3>
-
-                      <p className="text-gray-500">
-                        R$ {venda.valor}
-                      </p>
-
-                    </div>
-
-                    <div>
-
-                      <span
-                        className={`px-3 py-1 rounded-full text-sm font-semibold ${
-                          venda.status === "Pago"
-                            ? "bg-green-100 text-green-700"
-                            : "bg-yellow-100 text-yellow-700"
-                        }`}
-                      >
-                        {venda.status === "Pago"
-                          ? "✅ Pago"
-                          : "⏳ Pendente"}
-                      </span>
-
-                    </div>
-
-                  </div>
-
-                </div>
-
-              ))}
-
-            </div>
+            <button
+              onClick={salvarFechamento}
+              className="bg-black text-white p-3 rounded-xl"
+            >
+              Salvar Fechamento
+            </button>
 
           </div>
 
