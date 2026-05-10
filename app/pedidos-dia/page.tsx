@@ -110,10 +110,9 @@ export default function PedidosDiaPage() {
                   <p className="text-xs text-gray-400 mt-2">
 
                     {new Date(
-                      pedido.created_at
-                    ).toLocaleString("pt-BR", {
-                      timeZone: "America/Sao_Paulo"
-                    })}
+                      new Date(venda.created_at)
+                      .getTime() - 3 * 60 * 60 * 1000
+                    ).toLocaleString("pt-BR")}
 
                   </p>
 
