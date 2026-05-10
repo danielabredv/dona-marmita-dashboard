@@ -4,15 +4,9 @@ import { useEffect, useState } from "react"
 import Sidebar from "@/components/ui/Sidebar"
 import { supabase } from "@/lib/supabase"
 
-export default function FinanceiroPage() {
-
-  const [valorReal, setValorReal] = useState("")
-  const [observacao, setObservacao] = useState("")
+export default function VendasPage() {
 
   const [vendas, setVendas] = useState<any[]>([])
-  const [fechamentos, setFechamentos] = useState<any[]>([])
-
-  // BUSCAR VENDAS
 
   async function buscarVendas() {
 
@@ -26,155 +20,38 @@ export default function FinanceiroPage() {
       .from("vendas")
       .select("*")
       .eq("user_id", user.id)
+      .order("created_at", {
+        ascending: false
+      })
 
     setVendas(data || [])
   }
 
-  // BUSCAR FECHAMENTOS
+  async function atualizarStatus(
+    id: number,
+    statusAtual: string
+  ) {
 
-  async function buscarFechamentos() {
-
-    const {
-      data: { user }
-    } = await supabase.auth.getUser()
-
-    if (!user) return
-
-    const { data } = await supabase
-      .from("fechamentos")
-      .select("*")
-      .eq("user_id", user.id)
-      .order("id", { ascending: false })
-
-    setFechamentos(data || [])
-  }
-
-  // SALVAR FECHAMENTO
-
-  async function salvarFechamento() {
-
-    const {
-      data: { user }
-    } = await supabase.auth.getUser()
-
-    if (!user) return
+    const novoStatus =
+      statusAtual === "Pago"
+        ? "Pendente"
+        : "Pago"
 
     await supabase
-      .from("fechamentos")
-      .insert([
-        {
-          valor_real: Number(valorReal),
-          observacao,
-          user_id: user.id
-        }
-      ])
+      .from("vendas")
+      .update({
+        status: novoStatus
+      })
+      .eq("id", id)
 
-    setValorReal("")
-    setObservacao("")
-
-    buscarFechamentos()
+    buscarVendas()
   }
 
   useEffect(() => {
 
     buscarVendas()
-    buscarFechamentos()
 
   }, [])
-
-  // DATA HOJE
-
-  const hoje = new Date()
-    .toLocaleDateString("pt-BR")
-
-  // VENDAS DE HOJE
-
-  const vendasHoje = vendas.filter((venda) => {
-
-    const dataVenda = new Date(
-      venda.created_at
-    ).toLocaleDateString("pt-BR")
-
-    return dataVenda === hoje
-  })
-
-  // TOTAL SISTEMA
-
-  const totalSistemaHoje = vendasHoje.reduce(
-    (total, venda) =>
-      total + Number(venda.valor),
-    0
-  )
-
-  // FECHAMENTO DE HOJE
-
-  const fechamentoHoje = fechamentos.find((item) => {
-
-    const dataFechamento = new Date(
-      item.created_at
-    ).toLocaleDateString("pt-BR")
-
-    return dataFechamento === hoje
-  })
-
-  const valorFechamento =
-    fechamentoHoje?.valor_real || 0
-
-  // DIFERENÇA
-
-  const diferenca =
-    valorFechamento - totalSistemaHoje
-
-  // DATA DE ONTEM
-
-  const ontem = new Date()
-
-  ontem.setDate(ontem.getDate() - 1)
-
-  const dataOntem =
-    ontem.toLocaleDateString("pt-BR")
-
-  // FECHAMENTO HOJE
-
-  const fechamentoAtualObj =
-    fechamentos.find((item) => {
-
-      const data = new Date(
-        item.created_at
-      ).toLocaleDateString("pt-BR")
-
-      return data === hoje
-    })
-
-  // FECHAMENTO ONTEM
-
-  const fechamentoOntemObj =
-    fechamentos.find((item) => {
-
-      const data = new Date(
-        item.created_at
-      ).toLocaleDateString("pt-BR")
-
-      return data === dataOntem
-    })
-
-  const fechamentoAtual =
-    fechamentoAtualObj?.valor_real || 0
-
-  const fechamentoOntem =
-    fechamentoOntemObj?.valor_real || 0
-
-  // CRESCIMENTO %
-
-  const crescimento =
-    fechamentoOntem > 0
-      ? (
-          (
-            (fechamentoAtual - fechamentoOntem)
-            / fechamentoOntem
-          ) * 100
-        ).toFixed(1)
-      : 0
 
   return (
 
@@ -184,122 +61,108 @@ export default function FinanceiroPage() {
 
       <main className="flex-1 p-10">
 
-        <h1 className="text-4xl font-bold mb-8">
-          Central Financeira
-        </h1>
+        <div className="flex items-center justify-between mb-10">
 
-        {/* CARDS */}
+          <div>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-5 mb-10">
+            <h1 className="text-4xl font-bold">
+              Minhas Vendas
+            </h1>
 
-          {/* SISTEMA */}
-
-          <div className="bg-white rounded-2xl p-6 shadow-sm">
-
-            <p className="text-gray-500 mb-2">
-              Sistema Hoje
+            <p className="text-gray-500 mt-2">
+              Histórico completo de vendas
             </p>
-
-            <h2 className="text-4xl font-bold">
-              R$ {totalSistemaHoje}
-            </h2>
-
-          </div>
-
-          {/* FECHAMENTO */}
-
-          <div className="bg-white rounded-2xl p-6 shadow-sm">
-
-            <p className="text-gray-500 mb-2">
-              Fechamento Real
-            </p>
-
-            <h2 className="text-4xl font-bold text-green-600">
-              R$ {valorFechamento}
-            </h2>
-
-          </div>
-
-          {/* DIFERENÇA */}
-
-          <div className="bg-white rounded-2xl p-6 shadow-sm">
-
-            <p className="text-gray-500 mb-2">
-              Diferença
-            </p>
-
-            <h2
-              className={`text-4xl font-bold ${
-                diferenca >= 0
-                  ? "text-green-600"
-                  : "text-red-600"
-              }`}
-            >
-              R$ {diferenca}
-            </h2>
-
-          </div>
-
-          {/* CRESCIMENTO */}
-
-          <div className="bg-white rounded-2xl p-6 shadow-sm">
-
-            <p className="text-gray-500 mb-2">
-              Crescimento
-            </p>
-
-            <h2
-              className={`text-4xl font-bold ${
-                Number(crescimento) >= 0
-                  ? "text-green-600"
-                  : "text-red-600"
-              }`}
-            >
-              {Number(crescimento) >= 0 ? "+" : ""}
-              {crescimento}%
-            </h2>
 
           </div>
 
         </div>
 
-        {/* FORMULÁRIO */}
+        {/* LISTA */}
 
-        <div className="bg-white rounded-2xl p-6 shadow-sm max-w-xl mb-10">
+        <div className="flex flex-col gap-5">
 
-          <h2 className="text-2xl font-bold mb-6">
-            Fechamento do Dia
-          </h2>
+          {vendas.map((venda) => (
 
-          <div className="flex flex-col gap-4">
-
-            <input
-              type="number"
-              placeholder="Valor real do dia"
-              value={valorReal}
-              onChange={(e) =>
-                setValorReal(e.target.value)
-              }
-              className="border p-3 rounded-xl"
-            />
-
-            <textarea
-              placeholder="Observação"
-              value={observacao}
-              onChange={(e) =>
-                setObservacao(e.target.value)
-              }
-              className="border p-3 rounded-xl"
-            />
-
-            <button
-              onClick={salvarFechamento}
-              className="bg-black text-white p-3 rounded-xl"
+            <div
+              key={venda.id}
+              className="bg-white rounded-2xl p-6 shadow-sm"
             >
-              Salvar Fechamento
-            </button>
 
-          </div>
+              <div className="flex items-start justify-between">
+
+                <div className="flex flex-col gap-2">
+
+                  <h2 className="text-2xl font-bold">
+                    {venda.cliente}
+                  </h2>
+
+                  <p className="text-gray-500">
+                    Vendedor: {venda.vendedor}
+                  </p>
+
+                  <p className="text-lg font-semibold">
+                    R$ {venda.valor}
+                  </p>
+
+                  <span
+                    className={`w-fit px-4 py-1 rounded-full text-sm font-medium ${
+                      venda.status === "Pago"
+                        ? "bg-green-100 text-green-700"
+                        : "bg-yellow-100 text-yellow-700"
+                    }`}
+                  >
+                    {venda.status}
+                  </span>
+
+                </div>
+
+                <div className="flex flex-col items-end gap-3">
+
+                  <span className="text-sm text-gray-400">
+
+                    {new Date(
+                      venda.created_at
+                    ).toLocaleString("pt-BR", {
+                      timeZone: "America/Sao_Paulo"
+                    })}
+
+                  </span>
+
+                  <button
+                    onClick={() =>
+                      atualizarStatus(
+                        venda.id,
+                        venda.status
+                      )
+                    }
+                    className="bg-black text-white px-5 py-2 rounded-xl hover:opacity-90 transition"
+                  >
+                    Alterar Status
+                  </button>
+
+                </div>
+
+              </div>
+
+            </div>
+
+          ))}
+
+          {vendas.length === 0 && (
+
+            <div className="bg-white rounded-2xl p-10 shadow-sm text-center">
+
+              <h2 className="text-2xl font-bold mb-2">
+                Nenhuma venda encontrada
+              </h2>
+
+              <p className="text-gray-500">
+                As vendas aparecerão aqui.
+              </p>
+
+            </div>
+
+          )}
 
         </div>
 
