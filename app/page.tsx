@@ -272,5 +272,69 @@ export default function DashboardPage() {
       </main>
 
     </div>
+    {/* ÚLTIMAS VENDAS */}
+
+<div className="flex flex-col gap-4">
+
+  <h2 className="text-2xl font-bold">
+    Últimas Vendas
+  </h2>
+
+  {vendas.slice(0, 5).map((venda) => (
+
+    <div
+      key={venda.id}
+      className="bg-white rounded-2xl p-5 shadow-sm"
+    >
+
+      <div className="flex items-center justify-between">
+
+        <div>
+
+          <h3 className="text-xl font-bold">
+            {venda.cliente}
+          </h3>
+
+          <p className="text-gray-500">
+            {venda.vendedor}
+          </p>
+
+        </div>
+
+        <div className="text-right">
+
+          <h3 className="text-xl font-bold">
+            R$ {venda.valor}
+          </h3>
+
+          <p
+            className={`text-sm font-medium ${
+              venda.status === "Pago"
+                ? "text-green-600"
+                : "text-yellow-600"
+            }`}
+          >
+            {venda.status}
+          </p>
+
+          <p className="text-xs text-gray-400 mt-1">
+
+            {new Date(
+              venda.created_at
+            ).toLocaleString("pt-BR", {
+              timeZone: "America/Sao_Paulo"
+            })}
+
+          </p>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  ))}
+
+</div>
   )
 }
