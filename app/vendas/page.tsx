@@ -20,7 +20,9 @@ export default function VendasPage() {
       .from("vendas")
       .select("*")
       .eq("user_id", user.id)
-      .order("id", { ascending: false })
+      .order("created_at", {
+        ascending: false
+      })
 
     setVendas(data || [])
   }
@@ -62,7 +64,9 @@ export default function VendasPage() {
   }
 
   useEffect(() => {
+
     buscarVendas()
+
   }, [])
 
   return (
@@ -95,55 +99,77 @@ export default function VendasPage() {
                   </h2>
 
                   <p className="text-gray-500">
+                    Vendedor: {venda.vendedor}
+                  </p>
+
+                  <p className="text-lg font-semibold mt-1">
                     R$ {venda.valor}
+                  </p>
+
+                  <p className="text-xs text-gray-400 mt-2">
+
+                    {new Date(
+                      venda.created_at
+                    ).toLocaleString("pt-BR", {
+                      timeZone: "America/Sao_Paulo"
+                    })}
+
                   </p>
 
                 </div>
 
-                <button
-                  onClick={() =>
-                    atualizarStatus(
-                      venda.id,
-                      venda.status
-                    )
-                  }
-                  className={`px-4 py-2 rounded-full text-sm font-semibold ${
-                    venda.status === "Pago"
-                      ? "bg-green-100 text-green-700"
-                      : "bg-yellow-100 text-yellow-700"
-                  }`}
-                >
-                  {venda.status === "Pago"
-                    ? "✅ Pago"
-                    : "⏳ Pendente"}
-                </button>
+                <div className="flex flex-col items-end gap-3">
+
+                  <button
+                    onClick={() =>
+                      atualizarStatus(
+                        venda.id,
+                        venda.status
+                      )
+                    }
+                    className={`px-4 py-2 rounded-full text-sm font-semibold ${
+                      venda.status === "Pago"
+                        ? "bg-green-100 text-green-700"
+                        : "bg-yellow-100 text-yellow-700"
+                    }`}
+                  >
+                    {venda.status === "Pago"
+                      ? "✅ Pago"
+                      : "⏳ Pendente"}
+                  </button>
+
+                  <button
+                    onClick={() =>
+                      excluirVenda(venda.id)
+                    }
+                    className="bg-red-500 text-white px-4 py-2 rounded-xl hover:opacity-90"
+                  >
+                    Excluir Venda
+                  </button>
+
+                </div>
 
               </div>
-
-              <p>
-                <strong>Vendedor:</strong>{" "}
-                {venda.vendedor}
-              </p>
-
-              <p>
-                <strong>Data:</strong>{" "}
-                {new Date(
-                  venda.created_at
-                ).toLocaleString("pt-BR")}
-              </p>
-
-              <button
-                onClick={() =>
-                  excluirVenda(venda.id)
-                }
-                className="mt-4 bg-red-500 text-white px-4 py-2 rounded-xl"
-              >
-                Excluir Venda
-              </button>
 
             </div>
 
           ))}
+
+          {vendas.length === 0 && (
+
+            <div className="bg-white rounded-2xl p-10 shadow-sm text-center">
+
+              <h2 className="text-2xl font-bold mb-2">
+                Nenhuma venda encontrada
+              </h2>
+
+              <p className="text-gray-500">
+                As vendas aparecerão aqui.
+              </p>
+
+            </div>
+
+          )}
 
         </div>
 
