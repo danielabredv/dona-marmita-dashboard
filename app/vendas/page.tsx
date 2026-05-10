@@ -109,10 +109,10 @@ export default function VendasPage() {
                   <p className="text-xs text-gray-400 mt-2">
 
                     {new Date(
-                      venda.created_at
-                    ).toLocaleString("pt-BR", {
-                      timeZone: "America/Sao_Paulo"
-                    })}
+                      new Date(algo.created_at)
+                      .getTime() - 3 * 60 * 60 * 1000
+                      ).toLocaleString("pt-BR")
+                    })
 
                   </p>
 
