@@ -322,14 +322,14 @@ export default function DashboardPage() {
 
                       <p className="text-xs text-gray-400 mt-1">
 
-                       {new Date(
-                        venda.created_at
+                        {new Date(
+                          venda.created_at
                         ).toLocaleString("pt-BR", {
                           timeZone: "America/Sao_Paulo"
-                      })}
+                        })}
 
-                      
-                    </p>
+                      </p>
+
                     </div>
 
                   </div>
