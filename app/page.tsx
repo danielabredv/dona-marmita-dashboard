@@ -320,6 +320,16 @@ export default function DashboardPage() {
                         {venda.status}
                       </p>
 
+                      <p className="text-xs text-gray-400 mt-1">
+
+                       {new Date(
+                        venda.created_at
+                        ).toLocaleString("pt-BR", {
+                          timeZone: "America/Sao_Paulo"
+                      })}
+
+                      
+                    </p>
                     </div>
 
                   </div>
