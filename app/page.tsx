@@ -4,9 +4,16 @@ import { useEffect, useState } from "react"
 import Sidebar from "@/components/ui/Sidebar"
 import { supabase } from "@/lib/supabase"
 
-export default function VendasPage() {
+export default function DashboardPage() {
+
+  const [cliente, setCliente] = useState("")
+  const [vendedor, setVendedor] = useState("")
+  const [valor, setValor] = useState("")
+  const [status, setStatus] = useState("Pago")
 
   const [vendas, setVendas] = useState<any[]>([])
+
+  // BUSCAR VENDAS
 
   async function buscarVendas() {
 
@@ -27,22 +34,42 @@ export default function VendasPage() {
     setVendas(data || [])
   }
 
-  async function atualizarStatus(
-    id: number,
-    statusAtual: string
-  ) {
+  // SALVAR VENDA
 
-    const novoStatus =
-      statusAtual === "Pago"
-        ? "Pendente"
-        : "Pago"
+  async function salvarVenda() {
 
-    await supabase
+    const {
+      data: { user }
+    } = await supabase.auth.getUser()
+
+    if (!user) return
+
+    const { error } = await supabase
       .from("vendas")
-      .update({
-        status: novoStatus
-      })
-      .eq("id", id)
+      .insert([
+        {
+          cliente,
+          vendedor,
+          valor: Number(valor),
+          status,
+          user_id: user.id
+        }
+      ])
+
+    if (error) {
+
+      console.log(error)
+      alert("Erro ao salvar")
+
+      return
+    }
+
+    alert("Venda salva com sucesso")
+
+    setCliente("")
+    setVendedor("")
+    setValor("")
+    setStatus("Pago")
 
     buscarVendas()
   }
@@ -53,6 +80,53 @@ export default function VendasPage() {
 
   }, [])
 
+  // DATA DE HOJE
+
+  const hoje = new Date()
+    .toLocaleDateString("pt-BR")
+
+  // VENDAS DE HOJE
+
+  const vendasHoje = vendas.filter((venda) => {
+
+    const dataVenda = new Date(
+      venda.created_at
+    ).toLocaleDateString("pt-BR")
+
+    return dataVenda === hoje
+  })
+
+  // CARDS
+
+  const totalVendido = vendasHoje.reduce(
+    (total, venda) =>
+      total + Number(venda.valor),
+    0
+  )
+
+  const totalPago = vendasHoje
+    .filter((venda) =>
+      venda.status === "Pago"
+    )
+    .reduce(
+      (total, venda) =>
+        total + Number(venda.valor),
+      0
+    )
+
+  const totalPendente = vendasHoje
+    .filter((venda) =>
+      venda.status === "Pendente"
+    )
+    .reduce(
+      (total, venda) =>
+        total + Number(venda.valor),
+      0
+    )
+
+  const quantidadeVendas =
+    vendasHoje.length
+
   return (
 
     <div className="flex min-h-screen bg-zinc-100">
@@ -61,108 +135,137 @@ export default function VendasPage() {
 
       <main className="flex-1 p-10">
 
+        {/* HEADER */}
+
         <div className="flex items-center justify-between mb-10">
 
           <div>
 
             <h1 className="text-4xl font-bold">
-              Minhas Vendas
+              Dashboard
             </h1>
 
             <p className="text-gray-500 mt-2">
-              Histórico completo de vendas
+              Controle operacional Dona Marmita
             </p>
 
           </div>
 
         </div>
 
-        {/* LISTA */}
+        {/* CARDS */}
 
-        <div className="flex flex-col gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-5 mb-10">
 
-          {vendas.map((venda) => (
+          <div className="bg-white rounded-2xl p-6 shadow-sm">
 
-            <div
-              key={venda.id}
-              className="bg-white rounded-2xl p-6 shadow-sm"
+            <p className="text-gray-500 mb-2">
+              Total Hoje
+            </p>
+
+            <h2 className="text-4xl font-bold">
+              R$ {totalVendido}
+            </h2>
+
+          </div>
+
+          <div className="bg-white rounded-2xl p-6 shadow-sm">
+
+            <p className="text-gray-500 mb-2">
+              Pagos
+            </p>
+
+            <h2 className="text-4xl font-bold text-green-600">
+              R$ {totalPago}
+            </h2>
+
+          </div>
+
+          <div className="bg-white rounded-2xl p-6 shadow-sm">
+
+            <p className="text-gray-500 mb-2">
+              Pendentes
+            </p>
+
+            <h2 className="text-4xl font-bold text-yellow-600">
+              R$ {totalPendente}
+            </h2>
+
+          </div>
+
+          <div className="bg-white rounded-2xl p-6 shadow-sm">
+
+            <p className="text-gray-500 mb-2">
+              Pedidos Hoje
+            </p>
+
+            <h2 className="text-4xl font-bold">
+              {quantidadeVendas}
+            </h2>
+
+          </div>
+
+        </div>
+
+        {/* FORMULÁRIO */}
+
+        <div className="bg-white rounded-2xl p-6 shadow-sm max-w-xl mb-10">
+
+          <h2 className="text-2xl font-bold mb-6">
+            Nova Venda
+          </h2>
+
+          <div className="flex flex-col gap-4">
+
+            <input
+              type="text"
+              placeholder="Cliente"
+              value={cliente}
+              onChange={(e) =>
+                setCliente(e.target.value)
+              }
+              className="border p-3 rounded-xl"
+            />
+
+            <input
+              type="text"
+              placeholder="Vendedor"
+              value={vendedor}
+              onChange={(e) =>
+                setVendedor(e.target.value)
+              }
+              className="border p-3 rounded-xl"
+            />
+
+            <input
+              type="number"
+              placeholder="Valor"
+              value={valor}
+              onChange={(e) =>
+                setValor(e.target.value)
+              }
+              className="border p-3 rounded-xl"
+            />
+
+            <select
+              value={status}
+              onChange={(e) =>
+                setStatus(e.target.value)
+              }
+              className="border p-3 rounded-xl"
             >
+              <option>Pago</option>
+              <option>Pendente</option>
+            </select>
 
-              <div className="flex items-start justify-between">
+            <button
+              onClick={salvarVenda}
+              className="bg-black text-white p-3 rounded-xl hover:opacity-90"
+            >
+              Salvar Venda
+            </button>
 
-                <div className="flex flex-col gap-2">
-
-                  <h2 className="text-2xl font-bold">
-                    {venda.cliente}
-                  </h2>
-
-                  <p className="text-gray-500">
-                    Vendedor: {venda.vendedor}
-                  </p>
-
-                  <p className="text-lg font-semibold">
-                    R$ {venda.valor}
-                  </p>
-
-                  <span
-                    className={`w-fit px-4 py-1 rounded-full text-sm font-medium ${
-                      venda.status === "Pago"
-                        ? "bg-green-100 text-green-700"
-                        : "bg-yellow-100 text-yellow-700"
-                    }`}
-                  >
-                    {venda.status}
-                  </span>
-
-                </div>
-
-                <div className="flex flex-col items-end gap-3">
-
-                  <span className="text-sm text-gray-400">
-
-                    {new Date(
-                      venda.created_at
-                    ).toLocaleString("pt-BR", {
-                      timeZone: "America/Sao_Paulo"
-                    })}
-
-                  </span>
-
-                  <button
-                    onClick={() =>
-                      atualizarStatus(
-                        venda.id,
-                        venda.status
-                      )
-                    }
-                    className="bg-black text-white px-5 py-2 rounded-xl hover:opacity-90 transition"
-                  >
-                    Alterar Status
-                  </button>
-
-                </div>
-
-              </div>
-
-            </div>
-
-          ))}
-
-          {vendas.length === 0 && (
-
-            <div className="bg-white rounded-2xl p-10 shadow-sm text-center">
-
-              <h2 className="text-2xl font-bold mb-2">
-                Nenhuma venda encontrada
-              </h2>
-
-              <p className="text-gray-500">
-                As vendas aparecerão aqui.
-              </p>
-
-            </div>
-
-          )}
+          </div>
 
         </div>
 
