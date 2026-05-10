@@ -20,17 +20,23 @@ export default function PedidosDiaPage() {
       .from("vendas")
       .select("*")
       .eq("user_id", user.id)
-      .order("id", { ascending: false })
+      .order("created_at", {
+        ascending: false
+      })
 
     const hoje = new Date()
-      .toLocaleDateString("pt-BR")
+      .toLocaleDateString("pt-BR", {
+        timeZone: "America/Sao_Paulo"
+      })
 
     const pedidosFiltrados = (data || [])
       .filter((venda) => {
 
         const dataVenda = new Date(
           venda.created_at
-        ).toLocaleDateString("pt-BR")
+        ).toLocaleDateString("pt-BR", {
+          timeZone: "America/Sao_Paulo"
+        })
 
         return dataVenda === hoje
       })
@@ -59,7 +65,9 @@ export default function PedidosDiaPage() {
   }
 
   useEffect(() => {
+
     buscarPedidosHoje()
+
   }, [])
 
   return (
@@ -92,7 +100,21 @@ export default function PedidosDiaPage() {
                   </h2>
 
                   <p className="text-gray-500">
+                    Vendedor: {pedido.vendedor}
+                  </p>
+
+                  <p className="text-lg font-semibold mt-1">
                     R$ {pedido.valor}
+                  </p>
+
+                  <p className="text-xs text-gray-400 mt-2">
+
+                    {new Date(
+                      pedido.created_at
+                    ).toLocaleString("pt-BR", {
+                      timeZone: "America/Sao_Paulo"
+                    })}
+
                   </p>
 
                 </div>
@@ -120,6 +142,22 @@ export default function PedidosDiaPage() {
             </div>
 
           ))}
+
+          {pedidosHoje.length === 0 && (
+
+            <div className="bg-white rounded-2xl p-10 shadow-sm text-center">
+
+              <h2 className="text-2xl font-bold mb-2">
+                Nenhum pedido hoje
+              </h2>
+
+              <p className="text-gray-500">
+                Os pedidos do dia aparecerão aqui.
+              </p>
+
+            </div>
+
+          )}
 
         </div>
 
