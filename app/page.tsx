@@ -83,19 +83,15 @@ export default function DashboardPage() {
   // DATA DE HOJE
 
   const hoje = new Date()
-    .toLocaleDateString("pt-BR", {
-      timeZone: "America/Sao_Paulo"
-    })
+    .toISOString()
+    .split("T")[0]
 
   // VENDAS DE HOJE
 
   const vendasHoje = vendas.filter((venda) => {
 
-    const dataVenda = new Date(
-      venda.created_at
-    ).toLocaleDateString("pt-BR", {
-      timeZone: "America/Sao_Paulo"
-    })
+    const dataVenda =
+      venda.created_at.split("T")[0]
 
     return dataVenda === hoje
   })
@@ -211,130 +207,130 @@ export default function DashboardPage() {
 
         </div>
 
-        {/* FORMULÁRIO */}
+        {/* FORM + ÚLTIMAS VENDAS */}
 
-        <div className="bg-white rounded-2xl p-6 shadow-sm max-w-xl mb-10">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-10">
 
-          <h2 className="text-2xl font-bold mb-6">
-            Nova Venda
-          </h2>
+          {/* FORMULÁRIO */}
 
-          <div className="flex flex-col gap-4">
+          <div className="bg-white rounded-2xl p-6 shadow-sm">
 
-            <input
-              type="text"
-              placeholder="Cliente"
-              value={cliente}
-              onChange={(e) =>
-                setCliente(e.target.value)
-              }
-              className="border p-3 rounded-xl"
-            />
+            <h2 className="text-2xl font-bold mb-6">
+              Nova Venda
+            </h2>
 
-            <input
-              type="text"
-              placeholder="Vendedor"
-              value={vendedor}
-              onChange={(e) =>
-                setVendedor(e.target.value)
-              }
-              className="border p-3 rounded-xl"
-            />
+            <div className="flex flex-col gap-4">
 
-            <input
-              type="number"
-              placeholder="Valor"
-              value={valor}
-              onChange={(e) =>
-                setValor(e.target.value)
-              }
-              className="border p-3 rounded-xl"
-            />
+              <input
+                type="text"
+                placeholder="Cliente"
+                value={cliente}
+                onChange={(e) =>
+                  setCliente(e.target.value)
+                }
+                className="border p-3 rounded-xl"
+              />
 
-            <select
-              value={status}
-              onChange={(e) =>
-                setStatus(e.target.value)
-              }
-              className="border p-3 rounded-xl"
-            >
-              <option>Pago</option>
-              <option>Pendente</option>
-            </select>
+              <input
+                type="text"
+                placeholder="Vendedor"
+                value={vendedor}
+                onChange={(e) =>
+                  setVendedor(e.target.value)
+                }
+                className="border p-3 rounded-xl"
+              />
 
-            <button
-              onClick={salvarVenda}
-              className="bg-black text-white p-3 rounded-xl hover:opacity-90"
-            >
-              Salvar Venda
-            </button>
+              <input
+                type="number"
+                placeholder="Valor"
+                value={valor}
+                onChange={(e) =>
+                  setValor(e.target.value)
+                }
+                className="border p-3 rounded-xl"
+              />
 
-          </div>
+              <select
+                value={status}
+                onChange={(e) =>
+                  setStatus(e.target.value)
+                }
+                className="border p-3 rounded-xl"
+              >
+                <option>Pago</option>
+                <option>Pendente</option>
+              </select>
 
-        </div>
-
-        {/* ÚLTIMAS VENDAS */}
-
-        <div className="flex flex-col gap-4">
-
-          <h2 className="text-2xl font-bold">
-            Últimas Vendas
-          </h2>
-
-          {vendas.slice(0, 5).map((venda) => (
-
-            <div
-              key={venda.id}
-              className="bg-white rounded-2xl p-5 shadow-sm"
-            >
-
-              <div className="flex items-center justify-between">
-
-                <div>
-
-                  <h3 className="text-xl font-bold">
-                    {venda.cliente}
-                  </h3>
-
-                  <p className="text-gray-500">
-                    {venda.vendedor}
-                  </p>
-
-                </div>
-
-                <div className="text-right">
-
-                  <h3 className="text-xl font-bold">
-                    R$ {venda.valor}
-                  </h3>
-
-                  <p
-                    className={`text-sm font-medium ${
-                      venda.status === "Pago"
-                        ? "text-green-600"
-                        : "text-yellow-600"
-                    }`}
-                  >
-                    {venda.status}
-                  </p>
-
-                  <p className="text-xs text-gray-400 mt-1">
-
-                    {new Date(
-                      venda.created_at
-                    ).toLocaleString("pt-BR", {
-                      timeZone: "America/Sao_Paulo"
-                    })}
-
-                  </p>
-
-                </div>
-
-              </div>
+              <button
+                onClick={salvarVenda}
+                className="bg-black text-white p-3 rounded-xl hover:opacity-90"
+              >
+                Salvar Venda
+              </button>
 
             </div>
 
-          ))}
+          </div>
+
+          {/* ÚLTIMAS VENDAS */}
+
+          <div className="bg-white rounded-2xl p-6 shadow-sm">
+
+            <h2 className="text-2xl font-bold mb-6">
+              Últimas Vendas
+            </h2>
+
+            <div className="flex flex-col gap-4">
+
+              {vendas.slice(0, 5).map((venda) => (
+
+                <div
+                  key={venda.id}
+                  className="border rounded-xl p-4"
+                >
+
+                  <div className="flex items-center justify-between">
+
+                    <div>
+
+                      <h3 className="font-bold">
+                        {venda.cliente}
+                      </h3>
+
+                      <p className="text-sm text-gray-500">
+                        {venda.vendedor}
+                      </p>
+
+                    </div>
+
+                    <div className="text-right">
+
+                      <h3 className="font-bold">
+                        R$ {venda.valor}
+                      </h3>
+
+                      <p
+                        className={`text-sm ${
+                          venda.status === "Pago"
+                            ? "text-green-600"
+                            : "text-yellow-600"
+                        }`}
+                      >
+                        {venda.status}
+                      </p>
+
+                    </div>
+
+                  </div>
+
+                </div>
+
+              ))}
+
+            </div>
+
+          </div>
 
         </div>
 
