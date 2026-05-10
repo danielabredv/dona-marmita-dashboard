@@ -83,7 +83,9 @@ export default function DashboardPage() {
   // DATA DE HOJE
 
   const hoje = new Date()
-    .toLocaleDateString("pt-BR")
+    .toLocaleDateString("pt-BR", {
+      timeZone: "America/Sao_Paulo"
+    })
 
   // VENDAS DE HOJE
 
@@ -91,7 +93,9 @@ export default function DashboardPage() {
 
     const dataVenda = new Date(
       venda.created_at
-    ).toLocaleDateString("pt-BR")
+    ).toLocaleDateString("pt-BR", {
+      timeZone: "America/Sao_Paulo"
+    })
 
     return dataVenda === hoje
   })
@@ -268,73 +272,74 @@ export default function DashboardPage() {
           </div>
 
         </div>
-           {/* ÚLTIMAS VENDAS */}
 
-<div className="flex flex-col gap-4">
+        {/* ÚLTIMAS VENDAS */}
 
-  <h2 className="text-2xl font-bold">
-    Últimas Vendas
-  </h2>
+        <div className="flex flex-col gap-4">
 
-  {vendas.slice(0, 5).map((venda) => (
+          <h2 className="text-2xl font-bold">
+            Últimas Vendas
+          </h2>
 
-    <div
-      key={venda.id}
-      className="bg-white rounded-2xl p-5 shadow-sm"
-    >
+          {vendas.slice(0, 5).map((venda) => (
 
-      <div className="flex items-center justify-between">
+            <div
+              key={venda.id}
+              className="bg-white rounded-2xl p-5 shadow-sm"
+            >
 
-        <div>
+              <div className="flex items-center justify-between">
 
-          <h3 className="text-xl font-bold">
-            {venda.cliente}
-          </h3>
+                <div>
 
-          <p className="text-gray-500">
-            {venda.vendedor}
-          </p>
+                  <h3 className="text-xl font-bold">
+                    {venda.cliente}
+                  </h3>
+
+                  <p className="text-gray-500">
+                    {venda.vendedor}
+                  </p>
+
+                </div>
+
+                <div className="text-right">
+
+                  <h3 className="text-xl font-bold">
+                    R$ {venda.valor}
+                  </h3>
+
+                  <p
+                    className={`text-sm font-medium ${
+                      venda.status === "Pago"
+                        ? "text-green-600"
+                        : "text-yellow-600"
+                    }`}
+                  >
+                    {venda.status}
+                  </p>
+
+                  <p className="text-xs text-gray-400 mt-1">
+
+                    {new Date(
+                      venda.created_at
+                    ).toLocaleString("pt-BR", {
+                      timeZone: "America/Sao_Paulo"
+                    })}
+
+                  </p>
+
+                </div>
+
+              </div>
+
+            </div>
+
+          ))}
 
         </div>
 
-        <div className="text-right">
-
-          <h3 className="text-xl font-bold">
-            R$ {venda.valor}
-          </h3>
-
-          <p
-            className={`text-sm font-medium ${
-              venda.status === "Pago"
-                ? "text-green-600"
-                : "text-yellow-600"
-            }`}
-          >
-            {venda.status}
-          </p>
-
-          <p className="text-xs text-gray-400 mt-1">
-
-            {new Date(
-              venda.created_at
-            ).toLocaleString("pt-BR", {
-              timeZone: "America/Sao_Paulo"
-            })}
-
-          </p>
-
-        </div>
-
-      </div>
-
-    </div>
-
-  ))}
-
-</div>
-  )
-}
       </main>
 
     </div>
- 
+  )
+}
