@@ -94,7 +94,7 @@ export default function PendentesPage() {
                   <p className="text-xs text-gray-400 mt-2">
 
                     {new Date(
-                      new Date(pedido.created_at)
+                      new Date(venda.created_at)
                         .getTime() - 3 * 60 * 60 * 1000
                     ).toLocaleString("pt-BR")}
 
