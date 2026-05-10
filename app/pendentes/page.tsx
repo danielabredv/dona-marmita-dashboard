@@ -21,7 +21,9 @@ export default function PendentesPage() {
       .select("*")
       .eq("user_id", user.id)
       .eq("status", "Pendente")
-      .order("id", { ascending: false })
+      .order("created_at", {
+        ascending: false
+      })
 
     setPendentes(data || [])
   }
@@ -47,7 +49,9 @@ export default function PendentesPage() {
   }
 
   useEffect(() => {
+
     buscarPendentes()
+
   }, [])
 
   return (
@@ -80,7 +84,21 @@ export default function PendentesPage() {
                   </h2>
 
                   <p className="text-gray-500">
+                    Vendedor: {venda.vendedor}
+                  </p>
+
+                  <p className="text-lg font-semibold mt-1">
                     R$ {venda.valor}
+                  </p>
+
+                  <p className="text-xs text-gray-400 mt-2">
+
+                    {new Date(
+                      venda.created_at
+                    ).toLocaleString("pt-BR", {
+                      timeZone: "America/Sao_Paulo"
+                    })}
+
                   </p>
 
                 </div>
@@ -102,6 +120,22 @@ export default function PendentesPage() {
             </div>
 
           ))}
+
+          {pendentes.length === 0 && (
+
+            <div className="bg-white rounded-2xl p-10 shadow-sm text-center">
+
+              <h2 className="text-2xl font-bold mb-2">
+                Nenhum cliente pendente
+              </h2>
+
+              <p className="text-gray-500">
+                Os clientes pendentes aparecerão aqui.
+              </p>
+
+            </div>
+
+          )}
 
         </div>
 
