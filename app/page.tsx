@@ -268,11 +268,7 @@ export default function DashboardPage() {
           </div>
 
         </div>
-
-      </main>
-
-    </div>
-    {/* ÚLTIMAS VENDAS */}
+           {/* ÚLTIMAS VENDAS */}
 
 <div className="flex flex-col gap-4">
 
@@ -338,3 +334,7 @@ export default function DashboardPage() {
 </div>
   )
 }
+      </main>
+
+    </div>
+ 
