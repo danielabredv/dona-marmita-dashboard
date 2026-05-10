@@ -25,18 +25,14 @@ export default function PedidosDiaPage() {
       })
 
     const hoje = new Date()
-      .toLocaleDateString("pt-BR", {
-        timeZone: "America/Sao_Paulo"
-      })
+      .toISOString()
+      .split("T")[0]
 
     const pedidosFiltrados = (data || [])
       .filter((venda) => {
 
-        const dataVenda = new Date(
-          venda.created_at
-        ).toLocaleDateString("pt-BR", {
-          timeZone: "America/Sao_Paulo"
-        })
+        const dataVenda =
+          venda.created_at.split("T")[0]
 
         return dataVenda === hoje
       })
@@ -110,8 +106,8 @@ export default function PedidosDiaPage() {
                   <p className="text-xs text-gray-400 mt-2">
 
                     {new Date(
-                      new Date(venda.created_at)
-                      .getTime() - 3 * 60 * 60 * 1000
+                      new Date(pedido.created_at)
+                        .getTime() - 3 * 60 * 60 * 1000
                     ).toLocaleString("pt-BR")}
 
                   </p>
