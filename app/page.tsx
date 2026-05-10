@@ -323,10 +323,9 @@ export default function DashboardPage() {
                       <p className="text-xs text-gray-400 mt-1">
 
                         {new Date(
-                          venda.created_at
-                        ).toLocaleString("pt-BR", {
-                          timeZone: "America/Sao_Paulo"
-                        })}
+                           new Date(venda.created_at)
+                              .getTime() - 3 * 60 * 60 * 1000
+                        ).toLocaleString("pt-BR")}
 
                       </p>
 
