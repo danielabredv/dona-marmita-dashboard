@@ -1,62 +1,135 @@
 "use client"
 
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
+
+import {
+  LayoutDashboard,
+  ShoppingCart,
+  CircleDollarSign,
+  Clock3,
+  Package,
+  LogOut
+} from "lucide-react"
+
+import { supabase } from "@/lib/supabase"
 
 export default function Sidebar() {
 
   const pathname = usePathname()
+  const router = useRouter()
 
-  const links = [
+  async function sair() {
+
+    await supabase.auth.signOut()
+
+    router.push("/login")
+  }
+
+  const menu = [
+
     {
       nome: "Dashboard",
-      href: "/"
+      rota: "/",
+      icon: LayoutDashboard
     },
-    {
-      nome: "Minhas Vendas",
-      href: "/vendas"
-    },
+
     {
       nome: "Pedidos do Dia",
-      href: "/pedidos-dia"
+      rota: "/pedidos-dia",
+      icon: ShoppingCart
     },
-    {
-      nome: "Pendentes",
-      href: "/pendentes"
-    },
+
     {
       nome: "Central Financeira",
-      href: "/financeiro"
+      rota: "/financeiro",
+      icon: CircleDollarSign
+    },
+
+    {
+      nome: "Pendentes",
+      rota: "/pendentes",
+      icon: Clock3
+    },
+
+    {
+      nome: "Minhas Vendas",
+      rota: "/vendas",
+      icon: Package
     }
   ]
 
   return (
 
-    <aside className="w-64 min-h-screen bg-black text-white p-6">
+    <aside className="w-72 min-h-screen bg-black text-white p-6 flex flex-col justify-between">
 
-      <h1 className="text-2xl font-bold mb-10">
-        Dona Marmita
-      </h1>
+      <div>
 
-      <nav className="flex flex-col gap-3">
+        {/* LOGO */}
 
-        {links.map((link) => (
+        <div className="mb-12">
 
-          <Link
-            key={link.href}
-            href={link.href}
-            className={`p-3 rounded-xl transition ${
-              pathname === link.href
-                ? "bg-white text-black"
-                : "hover:bg-zinc-800"
-            }`}
-          >
-            {link.nome}
-          </Link>
+          <h1 className="text-3xl font-bold">
+            Dona Marmita
+          </h1>
 
-        ))}
+          <p className="text-zinc-400 mt-2">
+            Controle Operacional
+          </p>
 
-      </nav>
+        </div>
+
+        {/* MENU */}
+
+        <nav className="flex flex-col gap-3">
+
+          {menu.map((item) => {
+
+            const Icon = item.icon
+
+            const ativo =
+              pathname === item.rota
+
+            return (
+
+              <Link
+                key={item.rota}
+                href={item.rota}
+                className={`flex items-center gap-3 px-4 py-4 rounded-2xl transition-all duration-200 ${
+                  ativo
+                    ? "bg-white text-black"
+                    : "hover:bg-zinc-900 text-zinc-300"
+                }`}
+              >
+
+                <Icon size={22} />
+
+                <span className="font-medium">
+                  {item.nome}
+                </span>
+
+              </Link>
+            )
+          })}
+
+        </nav>
+
+      </div>
+
+      {/* SAIR */}
+
+      <button
+        onClick={sair}
+        className="flex items-center gap-3 px-4 py-4 rounded-2xl hover:bg-red-500/20 text-red-400 transition-all duration-200"
+      >
+
+        <LogOut size={22} />
+
+        <span className="font-medium">
+          Sair
+        </span>
+
+      </button>
 
     </aside>
   )
