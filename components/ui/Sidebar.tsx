@@ -9,6 +9,7 @@ import {
   CircleDollarSign,
   Clock3,
   Package,
+  Link2,
   LogOut
 } from "lucide-react"
 
@@ -56,6 +57,13 @@ export default function Sidebar() {
       nome: "Minhas Vendas",
       rota: "/vendas",
       icon: Package
+    },
+    
+    {
+      nome: "Gerador de Links",
+      rota: "/gerador-links",
+      icon: Link2
+
     }
   ]
 
