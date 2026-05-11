@@ -1,10 +1,31 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
 import Sidebar from "@/components/ui/Sidebar"
 import { supabase } from "@/lib/supabase"
 
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell
+} from "recharts"
+
+import {
+  AlertTriangle,
+  Flame,
+  TrendingUp
+} from "lucide-react"
+
 export default function DashboardPage() {
+
+  const router = useRouter()
 
   const [cliente, setCliente] = useState("")
   const [vendedor, setVendedor] = useState("")
@@ -74,6 +95,15 @@ export default function DashboardPage() {
     buscarVendas()
   }
 
+  // LOGOUT
+
+  async function sair() {
+
+    await supabase.auth.signOut()
+
+    router.push("/login")
+  }
+
   useEffect(() => {
 
     buscarVendas()
@@ -127,9 +157,58 @@ export default function DashboardPage() {
   const quantidadeVendas =
     vendasHoje.length
 
+  // GRÁFICO POR HORÁRIO
+
+  const vendasPorHorario: any = {}
+
+  vendasHoje.forEach((venda) => {
+
+    const data = new Date(
+      new Date(venda.created_at)
+        .getTime() - 3 * 60 * 60 * 1000
+    )
+
+    const hora =
+      data.getHours()
+        .toString()
+        .padStart(2, "0") + "h"
+
+    if (!vendasPorHorario[hora]) {
+
+      vendasPorHorario[hora] = 0
+    }
+
+    vendasPorHorario[hora] += Number(venda.valor)
+  })
+
+  const graficoVendas = Object.keys(
+    vendasPorHorario
+  ).map((hora) => ({
+
+    nome: hora,
+    valor: vendasPorHorario[hora]
+
+  }))
+
+  // STATUS
+
+  const graficoStatus = [
+
+    {
+      name: "Pago",
+      value: totalPago
+    },
+
+    {
+      name: "Pendente",
+      value: totalPendente
+    }
+
+  ]
+
   return (
 
-    <div className="flex min-h-screen bg-zinc-100">
+    <div className="flex min-h-screen bg-[#f5f6f8]">
 
       <Sidebar />
 
@@ -141,65 +220,72 @@ export default function DashboardPage() {
 
           <div>
 
-            <h1 className="text-4xl font-bold">
+            <h1 className="text-5xl font-bold tracking-tight">
               Dashboard
             </h1>
 
-            <p className="text-gray-500 mt-2">
+            <p className="text-zinc-500 mt-2 text-lg">
               Controle operacional Dona Marmita
             </p>
 
           </div>
 
+          <button
+            onClick={sair}
+            className="bg-white border border-zinc-200 px-5 py-3 rounded-2xl hover:shadow-md transition-all"
+          >
+            Sair
+          </button>
+
         </div>
 
         {/* CARDS */}
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-5 mb-10">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-5 mb-8">
 
-          <div className="bg-white rounded-2xl p-6 shadow-sm">
+          <div className="bg-white rounded-3xl p-6 border border-zinc-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
 
-            <p className="text-gray-500 mb-2">
+            <p className="text-zinc-500 mb-3">
               Total Hoje
             </p>
 
-            <h2 className="text-4xl font-bold">
+            <h2 className="text-5xl font-bold tracking-tight">
               R$ {totalVendido}
             </h2>
 
           </div>
 
-          <div className="bg-white rounded-2xl p-6 shadow-sm">
+          <div className="bg-white rounded-3xl p-6 border border-zinc-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
 
-            <p className="text-gray-500 mb-2">
+            <p className="text-zinc-500 mb-3">
               Pagos
             </p>
 
-            <h2 className="text-4xl font-bold text-green-600">
+            <h2 className="text-5xl font-bold tracking-tight text-green-600">
               R$ {totalPago}
             </h2>
 
           </div>
 
-          <div className="bg-white rounded-2xl p-6 shadow-sm">
+          <div className="bg-white rounded-3xl p-6 border border-zinc-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
 
-            <p className="text-gray-500 mb-2">
+            <p className="text-zinc-500 mb-3">
               Pendentes
             </p>
 
-            <h2 className="text-4xl font-bold text-yellow-600">
+            <h2 className="text-5xl font-bold tracking-tight text-yellow-600">
               R$ {totalPendente}
             </h2>
 
           </div>
 
-          <div className="bg-white rounded-2xl p-6 shadow-sm">
+          <div className="bg-white rounded-3xl p-6 border border-zinc-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
 
-            <p className="text-gray-500 mb-2">
+            <p className="text-zinc-500 mb-3">
               Pedidos Hoje
             </p>
 
-            <h2 className="text-4xl font-bold">
+            <h2 className="text-5xl font-bold tracking-tight">
               {quantidadeVendas}
             </h2>
 
@@ -207,19 +293,142 @@ export default function DashboardPage() {
 
         </div>
 
+        {/* ALERTAS DINÂMICOS */}
+
+        {(totalPendente > 1000 ||
+          quantidadeVendas > 15 ||
+          totalVendido > 3000) && (
+
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 mb-10">
+
+            {/* PENDENTE */}
+
+            {totalPendente > 1000 && (
+
+              <div className="bg-red-50 border border-red-200 rounded-3xl p-5 flex items-center justify-between shadow-sm">
+
+                <div className="flex items-center gap-4">
+
+                  <div className="bg-red-100 p-3 rounded-2xl">
+
+                    <AlertTriangle
+                      className="text-red-500"
+                      size={28}
+                    />
+
+                  </div>
+
+                  <div>
+
+                    <h3 className="font-bold text-red-600">
+                      Alto valor pendente
+                    </h3>
+
+                    <p className="text-sm text-zinc-600">
+
+                      R$ {totalPendente} aguardando pagamento
+
+                    </p>
+
+                  </div>
+
+                </div>
+
+              </div>
+
+            )}
+
+            {/* PICO */}
+
+            {quantidadeVendas > 15 && (
+
+              <div className="bg-yellow-50 border border-yellow-200 rounded-3xl p-5 flex items-center justify-between shadow-sm">
+
+                <div className="flex items-center gap-4">
+
+                  <div className="bg-yellow-100 p-3 rounded-2xl">
+
+                    <Flame
+                      className="text-yellow-500"
+                      size={28}
+                    />
+
+                  </div>
+
+                  <div>
+
+                    <h3 className="font-bold text-yellow-600">
+                      Pico operacional
+                    </h3>
+
+                    <p className="text-sm text-zinc-600">
+
+                      Alto volume de pedidos hoje
+
+                    </p>
+
+                  </div>
+
+                </div>
+
+              </div>
+
+            )}
+
+            {/* FATURAMENTO */}
+
+            {totalVendido > 3000 && (
+
+              <div className="bg-blue-50 border border-blue-200 rounded-3xl p-5 flex items-center justify-between shadow-sm">
+
+                <div className="flex items-center gap-4">
+
+                  <div className="bg-blue-100 p-3 rounded-2xl">
+
+                    <TrendingUp
+                      className="text-blue-500"
+                      size={28}
+                    />
+
+                  </div>
+
+                  <div>
+
+                    <h3 className="font-bold text-blue-600">
+                      Faturamento acima da média
+                    </h3>
+
+                    <p className="text-sm text-zinc-600">
+
+                      R$ {totalVendido} vendidos hoje
+
+                    </p>
+
+                  </div>
+
+                </div>
+
+              </div>
+
+            )}
+
+          </div>
+
+        )}
+
         {/* FORM + ÚLTIMAS VENDAS */}
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-10">
 
           {/* FORMULÁRIO */}
 
-          <div className="bg-white rounded-2xl p-6 shadow-sm">
+          <div className="bg-white rounded-3xl p-8 border border-zinc-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
 
-            <h2 className="text-2xl font-bold mb-6">
+            <h2 className="text-3xl font-bold mb-8">
               Nova Venda
             </h2>
 
-            <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-5">
 
               <input
                 type="text"
@@ -228,7 +437,7 @@ export default function DashboardPage() {
                 onChange={(e) =>
                   setCliente(e.target.value)
                 }
-                className="border p-3 rounded-xl"
+                className="border border-zinc-200 bg-zinc-50 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-black"
               />
 
               <input
@@ -238,7 +447,7 @@ export default function DashboardPage() {
                 onChange={(e) =>
                   setVendedor(e.target.value)
                 }
-                className="border p-3 rounded-xl"
+                className="border border-zinc-200 bg-zinc-50 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-black"
               />
 
               <input
@@ -248,7 +457,7 @@ export default function DashboardPage() {
                 onChange={(e) =>
                   setValor(e.target.value)
                 }
-                className="border p-3 rounded-xl"
+                className="border border-zinc-200 bg-zinc-50 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-black"
               />
 
               <select
@@ -256,7 +465,7 @@ export default function DashboardPage() {
                 onChange={(e) =>
                   setStatus(e.target.value)
                 }
-                className="border p-3 rounded-xl"
+                className="border border-zinc-200 bg-zinc-50 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-black"
               >
                 <option>Pago</option>
                 <option>Pendente</option>
@@ -264,7 +473,7 @@ export default function DashboardPage() {
 
               <button
                 onClick={salvarVenda}
-                className="bg-black text-white p-3 rounded-xl hover:opacity-90"
+                className="bg-black text-white p-4 rounded-2xl hover:opacity-90 transition-all font-medium"
               >
                 Salvar Venda
               </button>
@@ -275,30 +484,30 @@ export default function DashboardPage() {
 
           {/* ÚLTIMAS VENDAS */}
 
-          <div className="bg-white rounded-2xl p-6 shadow-sm">
+          <div className="bg-white rounded-3xl p-8 border border-zinc-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
 
-            <h2 className="text-2xl font-bold mb-6">
+            <h2 className="text-3xl font-bold mb-8">
               Últimas Vendas
             </h2>
 
-            <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-5">
 
               {vendas.slice(0, 5).map((venda) => (
 
                 <div
                   key={venda.id}
-                  className="border rounded-xl p-4"
+                  className="bg-zinc-50 border border-zinc-100 rounded-3xl p-5"
                 >
 
                   <div className="flex items-center justify-between">
 
                     <div>
 
-                      <h3 className="font-bold">
+                      <h3 className="font-bold text-lg">
                         {venda.cliente}
                       </h3>
 
-                      <p className="text-sm text-gray-500">
+                      <p className="text-sm text-zinc-500">
                         {venda.vendedor}
                       </p>
 
@@ -306,27 +515,18 @@ export default function DashboardPage() {
 
                     <div className="text-right">
 
-                      <h3 className="font-bold">
+                      <h3 className="font-bold text-2xl">
                         R$ {venda.valor}
                       </h3>
 
                       <p
-                        className={`text-sm ${
+                        className={`text-sm font-medium ${
                           venda.status === "Pago"
                             ? "text-green-600"
                             : "text-yellow-600"
                         }`}
                       >
                         {venda.status}
-                      </p>
-
-                      <p className="text-xs text-gray-400 mt-1">
-
-                        {new Date(
-                           new Date(venda.created_at)
-                              .getTime() - 3 * 60 * 60 * 1000
-                        ).toLocaleString("pt-BR")}
-
                       </p>
 
                     </div>
@@ -336,6 +536,84 @@ export default function DashboardPage() {
                 </div>
 
               ))}
+
+            </div>
+
+          </div>
+
+        </div>
+
+        {/* GRÁFICOS */}
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+          {/* FATURAMENTO */}
+
+          <div className="bg-white rounded-3xl p-8 border border-zinc-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+
+            <h2 className="text-3xl font-bold mb-8">
+              Faturamento por Horário
+            </h2>
+
+            <div className="h-96">
+
+              <ResponsiveContainer width="100%" height="100%">
+
+                <BarChart data={graficoVendas}>
+
+                  <XAxis dataKey="nome" />
+
+                  <YAxis />
+
+                  <Tooltip />
+
+                  <Bar
+                    dataKey="valor"
+                    radius={[12, 12, 0, 0]}
+                  />
+
+                </BarChart>
+
+              </ResponsiveContainer>
+
+            </div>
+
+          </div>
+
+          {/* STATUS */}
+
+          <div className="bg-white rounded-3xl p-8 border border-zinc-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+
+            <h2 className="text-3xl font-bold mb-8">
+              Status das Vendas
+            </h2>
+
+            <div className="h-96">
+
+              <ResponsiveContainer width="100%" height="100%">
+
+                <PieChart>
+
+                  <Pie
+                    data={graficoStatus}
+                    dataKey="value"
+                    nameKey="name"
+                    outerRadius={90}
+                    cx="50%"
+                    cy="50%"
+                    label
+                  >
+
+                    <Cell fill="#16a34a" />
+                    <Cell fill="#ca8a04" />
+
+                  </Pie>
+
+                  <Tooltip />
+
+                </PieChart>
+
+              </ResponsiveContainer>
 
             </div>
 
