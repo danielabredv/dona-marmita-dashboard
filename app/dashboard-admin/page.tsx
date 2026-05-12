@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 
 import { supabase } from "@/lib/supabase"
-import Sidebar from "@/components/ui/Sidebar"
+import Sidebar from "@/components/ui/AdminSidebar"
 
 import {
   ResponsiveContainer,
@@ -17,6 +17,7 @@ import {
   Pie,
   Cell
 } from "recharts"
+import AdminSidebar from "@/components/ui/AdminSidebar"
 
 export default function DashboardAdminPage() {
 
@@ -198,7 +199,7 @@ export default function DashboardAdminPage() {
 
     <div className="flex min-h-screen bg-[#f5f6f8]">
 
-      <Sidebar />
+      <AdminSidebar />
 
       <main className="flex-1 p-10">
 
@@ -483,4 +484,3 @@ export default function DashboardAdminPage() {
     </div>
   )
 }
-
