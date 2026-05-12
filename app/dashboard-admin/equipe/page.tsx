@@ -95,7 +95,7 @@ export default function EquipeAdminPage() {
 
   }, [])
 
-  // TOTAL VENDAS
+  // TOTAL VENDIDO
 
   const totalVendido =
     vendas.reduce(
@@ -132,15 +132,82 @@ export default function EquipeAdminPage() {
         0
       )
 
+  // RANKING MENSAL
+
+  const inicioMes = new Date(
+    new Date().getFullYear(),
+    new Date().getMonth(),
+    1
+  )
+
+  const vendasMes = vendas.filter((venda) => {
+
+    const dataVenda = new Date(
+      venda.created_at
+    )
+
+    return dataVenda >= inicioMes
+  })
+
+  const vendedoresMap: any = {}
+
+  vendasMes.forEach((venda) => {
+
+    // IGNORAR VENDEDORES INVÁLIDOS
+
+    if (
+      !venda.vendedor ||
+      venda.vendedor.trim() === ""
+    ) return
+
+    const nomeVendedor =
+      venda.vendedor.trim()
+
+    if (!vendedoresMap[nomeVendedor]) {
+
+      vendedoresMap[nomeVendedor] = {
+
+        vendedor: nomeVendedor,
+        total: 0,
+        pedidos: 0,
+        pendente: 0
+
+      }
+    }
+
+    vendedoresMap[nomeVendedor].total +=
+      Number(venda.valor)
+
+    vendedoresMap[nomeVendedor].pedidos += 1
+
+    if (venda.status === "Pendente") {
+
+      vendedoresMap[nomeVendedor].pendente +=
+        Number(venda.valor)
+    }
+  })
+
+  const rankingVendedores =
+    Object.values(vendedoresMap)
+      .sort(
+        (a: any, b: any) =>
+          b.pedidos - a.pedidos
+      )
+
+  function medalha(index: number) {
+
+    if (index === 0) return "🥇"
+    if (index === 1) return "🥈"
+    if (index === 2) return "🥉"
+
+    return "🏅"
+  }
+
   return (
 
     <div className="flex min-h-screen bg-[#f5f6f8]">
 
-      {/* SIDEBAR */}
-
       <AdminSidebar />
-
-      {/* CONTEÚDO */}
 
       <main className="flex-1 p-10">
 
@@ -172,17 +239,13 @@ export default function EquipeAdminPage() {
 
             <div className="flex items-center justify-between mb-5">
 
-              <div className="bg-black text-white p-3 rounded-2xl">
+              <p className="text-zinc-500">
+                Total Vendido
+              </p>
 
-                <Users size={24} />
-
-              </div>
+              <Users className="text-zinc-400" />
 
             </div>
-
-            <p className="text-zinc-500 mb-2">
-              Total em vendas
-            </p>
 
             <h2 className="text-4xl font-bold">
 
@@ -192,23 +255,19 @@ export default function EquipeAdminPage() {
 
           </div>
 
-          {/* PAGOS */}
+          {/* PAGO */}
 
           <div className="bg-white rounded-3xl p-7 border border-zinc-100 shadow-sm">
 
             <div className="flex items-center justify-between mb-5">
 
-              <div className="bg-green-500 text-white p-3 rounded-2xl">
+              <p className="text-zinc-500">
+                Total Pago
+              </p>
 
-                <CheckCircle2 size={24} />
-
-              </div>
+              <CheckCircle2 className="text-green-500" />
 
             </div>
-
-            <p className="text-zinc-500 mb-2">
-              Total pago
-            </p>
 
             <h2 className="text-4xl font-bold text-green-600">
 
@@ -218,29 +277,106 @@ export default function EquipeAdminPage() {
 
           </div>
 
-          {/* PENDENTES */}
+          {/* PENDENTE */}
 
           <div className="bg-white rounded-3xl p-7 border border-zinc-100 shadow-sm">
 
             <div className="flex items-center justify-between mb-5">
 
-              <div className="bg-yellow-500 text-white p-3 rounded-2xl">
+              <p className="text-zinc-500">
+                Total Pendente
+              </p>
 
-                <Clock3 size={24} />
-
-              </div>
+              <Clock3 className="text-yellow-500" />
 
             </div>
-
-            <p className="text-zinc-500 mb-2">
-              Pendências
-            </p>
 
             <h2 className="text-4xl font-bold text-yellow-600">
 
               R$ {totalPendente}
 
             </h2>
+
+          </div>
+
+        </div>
+
+        {/* RANKING */}
+
+        <div className="bg-white rounded-3xl p-8 border border-zinc-100 shadow-sm mb-10">
+
+          <div className="mb-8">
+
+            <h2 className="text-3xl font-bold">
+              Ranking Mensal
+            </h2>
+
+            <p className="text-zinc-500 mt-2">
+              Vendedores com mais pedidos no mês
+            </p>
+
+          </div>
+
+          <div className="flex flex-col gap-4">
+
+            {rankingVendedores.map(
+              (vendedor: any, index: number) => (
+
+                <div
+                  key={index}
+                  className="border border-zinc-200 rounded-3xl p-6 flex items-center justify-between"
+                >
+
+                  <div className="flex items-center gap-5">
+
+                    <div className="text-5xl">
+
+                      {medalha(index)}
+
+                    </div>
+
+                    <div>
+
+                      <h3 className="text-2xl font-bold">
+
+                        {vendedor.vendedor}
+
+                      </h3>
+
+                      <p className="text-zinc-500 mt-1">
+
+                        {vendedor.pedidos}
+                        {" "}
+                        pedidos vendidos
+
+                      </p>
+
+                    </div>
+
+                  </div>
+
+                  <div className="text-right">
+
+                    <h3 className="text-3xl font-bold text-green-600">
+
+                      R$ {vendedor.total}
+
+                    </h3>
+
+                    <p className="text-yellow-600 font-medium mt-2">
+
+                      Pendentes:
+                      {" "}
+                      R$ {vendedor.pendente}
+
+                    </p>
+
+                  </div>
+
+                </div>
+
+              )
+            )}
 
           </div>
 
@@ -356,8 +492,6 @@ export default function EquipeAdminPage() {
               </div>
 
             ))}
-
-          {/* VAZIO */}
 
           {!loading &&
             vendas.length === 0 && (
