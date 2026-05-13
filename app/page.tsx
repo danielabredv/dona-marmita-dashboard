@@ -32,6 +32,11 @@ export default function DashboardPage() {
   const [valor, setValor] = useState("")
   const [status, setStatus] = useState("Pago")
 
+  // NOVO
+
+  const [origem, setOrigem] =
+    useState("WhatsApp")
+
   const [vendas, setVendas] = useState<any[]>([])
 
   // BUSCAR VENDAS
@@ -59,11 +64,23 @@ export default function DashboardPage() {
 
   async function salvarVenda() {
 
+    if (!cliente || !vendedor || !valor) {
+
+      alert("Preencha todos os campos")
+
+      return
+    }
+
     const {
       data: { user }
     } = await supabase.auth.getUser()
 
-    if (!user) return
+    if (!user) {
+
+      alert("Usuário não autenticado")
+
+      return
+    }
 
     const { error } = await supabase
       .from("vendas")
@@ -73,6 +90,7 @@ export default function DashboardPage() {
           vendedor,
           valor: Number(valor),
           status,
+          origem,
           user_id: user.id
         }
       ])
@@ -91,6 +109,10 @@ export default function DashboardPage() {
     setVendedor("")
     setValor("")
     setStatus("Pago")
+
+    // NOVO
+
+    setOrigem("WhatsApp")
 
     buscarVendas()
   }
@@ -225,196 +247,106 @@ export default function DashboardPage() {
             </h1>
 
             <p className="text-zinc-500 mt-2 text-lg">
-              Controle operacional Dona Marmita
+              Controle completo das vendas
             </p>
 
           </div>
-
-          <button
-            onClick={sair}
-            className="bg-white border border-zinc-200 px-5 py-3 rounded-2xl hover:shadow-md transition-all"
-          >
-            Sair
-          </button>
 
         </div>
 
         {/* CARDS */}
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-5 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-5 mb-10">
 
-          <div className="bg-white rounded-3xl p-6 border border-zinc-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+          <div className="bg-white rounded-3xl p-7 shadow-sm border border-zinc-100">
 
-            <p className="text-zinc-500 mb-3">
-              Total Hoje
-            </p>
+            <div className="flex items-center justify-between mb-4">
 
-            <h2 className="text-5xl font-bold tracking-tight">
+              <TrendingUp className="text-black" />
+
+              <span className="text-zinc-400 text-sm">
+                Hoje
+              </span>
+
+            </div>
+
+            <h2 className="text-zinc-500 mb-2">
+              Total Vendido
+            </h2>
+
+            <p className="text-4xl font-bold">
               R$ {totalVendido}
-            </h2>
+            </p>
 
           </div>
 
-          <div className="bg-white rounded-3xl p-6 border border-zinc-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+          <div className="bg-white rounded-3xl p-7 shadow-sm border border-zinc-100">
 
-            <p className="text-zinc-500 mb-3">
-              Pagos
-            </p>
+            <div className="flex items-center justify-between mb-4">
 
-            <h2 className="text-5xl font-bold tracking-tight text-green-600">
+              <Flame className="text-green-600" />
+
+              <span className="text-zinc-400 text-sm">
+                Pago
+              </span>
+
+            </div>
+
+            <h2 className="text-zinc-500 mb-2">
+              Total Pago
+            </h2>
+
+            <p className="text-4xl font-bold text-green-600">
               R$ {totalPago}
-            </h2>
+            </p>
 
           </div>
 
-          <div className="bg-white rounded-3xl p-6 border border-zinc-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+          <div className="bg-white rounded-3xl p-7 shadow-sm border border-zinc-100">
 
-            <p className="text-zinc-500 mb-3">
-              Pendentes
-            </p>
+            <div className="flex items-center justify-between mb-4">
 
-            <h2 className="text-5xl font-bold tracking-tight text-yellow-600">
+              <AlertTriangle className="text-yellow-500" />
+
+              <span className="text-zinc-400 text-sm">
+                Pendente
+              </span>
+
+            </div>
+
+            <h2 className="text-zinc-500 mb-2">
+              Total Pendente
+            </h2>
+
+            <p className="text-4xl font-bold text-yellow-500">
               R$ {totalPendente}
-            </h2>
+            </p>
 
           </div>
 
-          <div className="bg-white rounded-3xl p-6 border border-zinc-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+          <div className="bg-white rounded-3xl p-7 shadow-sm border border-zinc-100">
 
-            <p className="text-zinc-500 mb-3">
-              Pedidos Hoje
-            </p>
+            <div className="flex items-center justify-between mb-4">
 
-            <h2 className="text-5xl font-bold tracking-tight">
-              {quantidadeVendas}
+              <TrendingUp className="text-blue-500" />
+
+              <span className="text-zinc-400 text-sm">
+                Pedidos
+              </span>
+
+            </div>
+
+            <h2 className="text-zinc-500 mb-2">
+              Quantidade
             </h2>
+
+            <p className="text-4xl font-bold text-blue-500">
+              {quantidadeVendas}
+            </p>
 
           </div>
 
         </div>
-
-        {/* ALERTAS DINÂMICOS */}
-
-        {(totalPendente > 1000 ||
-          quantidadeVendas > 15 ||
-          totalVendido > 3000) && (
-
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 mb-10">
-
-            {/* PENDENTE */}
-
-            {totalPendente > 1000 && (
-
-              <div className="bg-red-50 border border-red-200 rounded-3xl p-5 flex items-center justify-between shadow-sm">
-
-                <div className="flex items-center gap-4">
-
-                  <div className="bg-red-100 p-3 rounded-2xl">
-
-                    <AlertTriangle
-                      className="text-red-500"
-                      size={28}
-                    />
-
-                  </div>
-
-                  <div>
-
-                    <h3 className="font-bold text-red-600">
-                      Alto valor pendente
-                    </h3>
-
-                    <p className="text-sm text-zinc-600">
-
-                      R$ {totalPendente} aguardando pagamento
-
-                    </p>
-
-                  </div>
-
-                </div>
-
-              </div>
-
-            )}
-
-            {/* PICO */}
-
-            {quantidadeVendas > 15 && (
-
-              <div className="bg-yellow-50 border border-yellow-200 rounded-3xl p-5 flex items-center justify-between shadow-sm">
-
-                <div className="flex items-center gap-4">
-
-                  <div className="bg-yellow-100 p-3 rounded-2xl">
-
-                    <Flame
-                      className="text-yellow-500"
-                      size={28}
-                    />
-
-                  </div>
-
-                  <div>
-
-                    <h3 className="font-bold text-yellow-600">
-                      Pico operacional
-                    </h3>
-
-                    <p className="text-sm text-zinc-600">
-
-                      Alto volume de pedidos hoje
-
-                    </p>
-
-                  </div>
-
-                </div>
-
-              </div>
-
-            )}
-
-            {/* FATURAMENTO */}
-
-            {totalVendido > 3000 && (
-
-              <div className="bg-blue-50 border border-blue-200 rounded-3xl p-5 flex items-center justify-between shadow-sm">
-
-                <div className="flex items-center gap-4">
-
-                  <div className="bg-blue-100 p-3 rounded-2xl">
-
-                    <TrendingUp
-                      className="text-blue-500"
-                      size={28}
-                    />
-
-                  </div>
-
-                  <div>
-
-                    <h3 className="font-bold text-blue-600">
-                      Faturamento acima da média
-                    </h3>
-
-                    <p className="text-sm text-zinc-600">
-
-                      R$ {totalVendido} vendidos hoje
-
-                    </p>
-
-                  </div>
-
-                </div>
-
-              </div>
-
-            )}
-
-          </div>
-
-        )}
 
         {/* FORM + ÚLTIMAS VENDAS */}
 
@@ -471,6 +403,26 @@ export default function DashboardPage() {
                 <option>Pendente</option>
               </select>
 
+              {/* NOVO SELECT */}
+
+              <select
+                value={origem}
+                onChange={(e) =>
+                  setOrigem(e.target.value)
+                }
+                className="border border-zinc-200 bg-zinc-50 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-black"
+              >
+
+                <option value="WhatsApp">
+                  WhatsApp
+                </option>
+
+                <option value="QrPedir">
+                  QrPedir
+                </option>
+
+              </select>
+
               <button
                 onClick={salvarVenda}
                 className="bg-black text-white p-4 rounded-2xl hover:opacity-90 transition-all font-medium"
@@ -507,26 +459,52 @@ export default function DashboardPage() {
                         {venda.cliente}
                       </h3>
 
-                      <p className="text-sm text-zinc-500">
-                        {venda.vendedor}
-                      </p>
+                      <div>
+
+                        <p className="text-sm text-zinc-500">
+                          {venda.vendedor}
+                        </p>
+
+                        <p className="text-xs text-zinc-400 mt-1">
+
+                          Origem:
+                          {" "}
+
+                          <strong>
+
+                            {venda.origem || "WhatsApp"}
+
+                          </strong>
+
+                        </p>
+
+                      </div>
 
                     </div>
 
                     <div className="text-right">
 
-                      <h3 className="font-bold text-2xl">
+                      <h3 className="font-bold">
                         R$ {venda.valor}
                       </h3>
 
                       <p
-                        className={`text-sm font-medium ${
+                        className={`text-sm ${
                           venda.status === "Pago"
                             ? "text-green-600"
                             : "text-yellow-600"
                         }`}
                       >
                         {venda.status}
+                      </p>
+
+                      <p className="text-xs text-gray-400 mt-1">
+
+                        {new Date(
+                          new Date(venda.created_at)
+                            .getTime() - 3 * 60 * 60 * 1000
+                        ).toLocaleString("pt-BR")}
+
                       </p>
 
                     </div>
@@ -536,84 +514,6 @@ export default function DashboardPage() {
                 </div>
 
               ))}
-
-            </div>
-
-          </div>
-
-        </div>
-
-        {/* GRÁFICOS */}
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-
-          {/* FATURAMENTO */}
-
-          <div className="bg-white rounded-3xl p-8 border border-zinc-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
-
-            <h2 className="text-3xl font-bold mb-8">
-              Faturamento por Horário
-            </h2>
-
-            <div className="h-96">
-
-              <ResponsiveContainer width="100%" height="100%">
-
-                <BarChart data={graficoVendas}>
-
-                  <XAxis dataKey="nome" />
-
-                  <YAxis />
-
-                  <Tooltip />
-
-                  <Bar
-                    dataKey="valor"
-                    radius={[12, 12, 0, 0]}
-                  />
-
-                </BarChart>
-
-              </ResponsiveContainer>
-
-            </div>
-
-          </div>
-
-          {/* STATUS */}
-
-          <div className="bg-white rounded-3xl p-8 border border-zinc-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
-
-            <h2 className="text-3xl font-bold mb-8">
-              Status das Vendas
-            </h2>
-
-            <div className="h-96">
-
-              <ResponsiveContainer width="100%" height="100%">
-
-                <PieChart>
-
-                  <Pie
-                    data={graficoStatus}
-                    dataKey="value"
-                    nameKey="name"
-                    outerRadius={90}
-                    cx="50%"
-                    cy="50%"
-                    label
-                  >
-
-                    <Cell fill="#16a34a" />
-                    <Cell fill="#ca8a04" />
-
-                  </Pie>
-
-                  <Tooltip />
-
-                </PieChart>
-
-              </ResponsiveContainer>
 
             </div>
 
