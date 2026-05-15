@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-
+import { FileSpreadsheet } from "lucide-react"
 import {
   LayoutDashboard,
   Users,
@@ -46,7 +46,13 @@ export default function AdminSidebar() {
       nome: "Links",
       rota: "/dashboard-admin/links",
       icon: Link2
-    }
+    },
+
+    {
+  nome: "Planilhas",
+  rota: "/planilhas",
+  icon: FileSpreadsheet
+    },
 
   ]
 
