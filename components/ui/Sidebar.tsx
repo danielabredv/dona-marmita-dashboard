@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
+import { FileSpreadsheet } from "lucide-react"
 
 import {
   LayoutDashboard,
@@ -64,6 +65,12 @@ export default function Sidebar() {
       rota: "/gerador-links",
       icon: Link2
 
+    },
+    
+    {
+      nome: "Planilhas",
+      rota: "/planilhas", 
+      icon: FileSpreadsheet
     }
   ]
 
