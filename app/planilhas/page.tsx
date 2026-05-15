@@ -1,7 +1,6 @@
-
 "use client"
 
-import Sidebar from "../../components/ui/Sidebar"
+import Sidebar from "@/components/ui/Sidebar"
 
 import { useMemo, useState } from "react"
 
@@ -15,276 +14,335 @@ import {
   Search,
   Users,
   DollarSign,
-  Calendar,
   MapPin,
-  Trash2
+  Trash2,
+  Crown,
+  Phone,
+  TrendingUp,
+  Calendar,
+  CheckCircle2,
+  AlertTriangle,
+  Sparkles,
+  Building2,
+  MessageCircle,
 } from "lucide-react"
 
 export default function PlanilhasPage() {
-
   const [dados, setDados] = useState<any[]>([])
 
+  const [busca, setBusca] = useState("")
+  const [cidadeFiltro, setCidadeFiltro] =
+    useState("")
+  const [bairroFiltro, setBairroFiltro] =
+    useState("")
   const [valorMinimo, setValorMinimo] =
     useState("")
-
-  const [busca, setBusca] =
-    useState("")
-
-  const [cidade, setCidade] =
-    useState("")
+  const [somenteVIP, setSomenteVIP] =
+    useState(false)
 
   const [dataInicial, setDataInicial] =
     useState("")
-
   const [dataFinal, setDataFinal] =
     useState("")
-
-  const [somenteUnicos, setSomenteUnicos] =
-    useState(true)
-
-  async function lerPlanilha(
-    e: any
-  ) {
-
-    const arquivo =
-      e.target.files[0]
-
-    if (!arquivo) return
-
-    const data =
-      await arquivo.arrayBuffer()
-
-    const workbook =
-      XLSX.read(data)
-
-    const nomePlanilha =
-      workbook.SheetNames[0]
-
-    const worksheet =
-      workbook.Sheets[nomePlanilha]
-
-    const json =
-      XLSX.utils.sheet_to_json(
-        worksheet
-      )
-
-    setDados(json)
-  }
 
   function formatarTelefone(
     telefone: any
   ) {
 
-    if (!telefone) return ""
+    if (!telefone)
+      return ""
 
-    let numero = String(telefone)
-      .replace(/\D/g, "")
+    let numero =
+      String(telefone)
+        .replace(/\D/g, "")
 
     if (
-      numero &&
-      !numero.startsWith("55")
+      numero.startsWith("0")
     ) {
-      numero = `55${numero}`
+      numero = numero.slice(1)
     }
 
-    return numero
+    if (
+      numero.startsWith("55")
+    ) {
+      return numero
+    }
+
+    return `55${numero}`
   }
 
-  function converterData(
-    data: string
-  ) {
+  async function lerPlanilha(e: any) {
+    const arquivo = e.target.files[0]
 
-    if (!data) return null
+    if (!arquivo) return
 
-    const partes = data.split("/")
+    const data = await arquivo.arrayBuffer()
 
-    if (partes.length !== 3)
-      return null
+    const workbook = XLSX.read(data)
 
-    return new Date(
-      `${partes[2]}-${partes[1]}-${partes[0]}`
+    const nomePlanilha = workbook.SheetNames[0]
+
+    const worksheet =
+      workbook.Sheets[nomePlanilha]
+
+    const json =
+      XLSX.utils.sheet_to_json(worksheet)
+
+    const dadosTratados = json.map(
+      (item: any) => {
+
+        const telefoneOriginal =
+          item.telefone ||
+          item.Telefone ||
+          item.celular ||
+          item.Celular ||
+          item.fone ||
+          item.Fone ||
+          ""
+
+        const telefoneFinal =
+          formatarTelefone(
+            telefoneOriginal
+          )
+
+        // DETECÇÃO INTELIGENTE DE ENDEREÇO
+
+        const enderecoCompleto = String(
+          item.endereco ||
+          item.Endereco ||
+          item.endereço ||
+          item.Endereço ||
+          ""
+        )
+
+        const enderecoLower =
+          enderecoCompleto.toLowerCase()
+
+        // TENTATIVA AUTOMÁTICA DE PEGAR CIDADE
+
+        let cidade = ""
+
+        const cidadesConhecidas = [
+          "lagarto",
+          "salvador",
+          "aracaju",
+          "são paulo",
+          "rio de janeiro",
+          "feira de santana",
+          "itabaiana",
+          "simão dias",
+          "socorro",
+        ]
+
+        cidadesConhecidas.forEach(
+          (cidadeTeste) => {
+
+            if (
+              enderecoLower.includes(
+                cidadeTeste
+              )
+            ) {
+              cidade = cidadeTeste
+            }
+          }
+        )
+
+        // BAIRRO
+
+        const partesEndereco =
+          enderecoCompleto.split(",")
+
+        const bairro =
+          partesEndereco[1]?.trim() || ""
+
+        // VALOR
+
+                // VALOR
+
+        const valorOriginal =
+          item["Valor total"] ??
+          item["valor total"] ??
+          item["Valor"] ??
+          item["valor"] ??
+          item["Total"] ??
+          item["total"] ??
+          0
+
+        let valor = 0
+
+        if (
+          typeof valorOriginal ===
+          "number"
+        ) {
+
+          valor = valorOriginal
+
+        } else {
+
+          valor = Number(
+            String(valorOriginal)
+              .replace("R$", "")
+              .replace(/\s/g, "")
+              .replace(/\./g, "")
+              .replace(",", ".")
+          ) || 0
+        }
+
+        const vip = valor >= 300
+
+        // DATA
+
+        const dataPedido =
+          item.data ||
+          item.Data ||
+          item.created_at ||
+          ""
+
+        return {
+          ...item,
+
+          telefone: telefoneFinal,
+
+          cidade,
+
+          bairro,
+
+          valor,
+
+          vip,
+
+          dataPedido,
+
+          telefoneValido:
+            telefoneFinal.length >= 12,
+        }
+      }
     )
+
+    // REMOVER DUPLICADOS
+
+    const removerDuplicados =
+      dadosTratados.filter(
+        (
+          item: any,
+          index: number,
+          self: any[]
+        ) =>
+          index ===
+          self.findIndex(
+            (i: any) =>
+              i.telefone === item.telefone
+          )
+      )
+
+    setDados(removerDuplicados)
   }
 
   const dadosFiltrados = useMemo(() => {
 
-    let resultado = [...dados]
+    return dados.filter((item: any) => {
 
-    // BUSCA GERAL
+      const texto =
+        JSON.stringify(item).toLowerCase()
 
-    if (busca) {
+      const buscaOk =
+        texto.includes(
+          busca.toLowerCase()
+        )
 
-      resultado = resultado.filter(
-        (linha: any) =>
-
-          JSON.stringify(linha)
-            .toLowerCase()
+      const cidadeOk = cidadeFiltro
+        ? item.cidade
+            ?.toLowerCase()
             .includes(
-              busca.toLowerCase()
+              cidadeFiltro.toLowerCase()
             )
-      )
-    }
+        : true
 
-    // FILTRO VALOR
-
-    if (valorMinimo) {
-
-      resultado = resultado.filter(
-        (linha: any) => {
-
-          const valor =
-            Number(
-              String(
-                linha["Valor total"] ||
-                linha["valor"] ||
-                linha["valor total"] ||
-                0
-              )
-                .replace(".", "")
-                .replace(",", ".")
+      const bairroOk = bairroFiltro
+        ? item.bairro
+            ?.toLowerCase()
+            .includes(
+              bairroFiltro.toLowerCase()
             )
+        : true
 
-          return (
-            valor >=
-            Number(valorMinimo)
-          )
-        }
+            // FILTRO VALOR
+
+      const minimo =
+        Number(valorMinimo) || 0
+
+      const valorItem =
+        Number(item.valor) || 0
+
+      const valorOk =
+        minimo > 0
+          ? valorItem >= minimo
+          : true
+
+      const vipOk = somenteVIP
+        ? item.vip
+        : true
+
+      // FILTRO DATA
+
+      let dataOk = true
+
+      if (
+        dataInicial &&
+        item.dataPedido
+      ) {
+
+        const dataItem =
+          new Date(item.dataPedido)
+
+        const inicio =
+          new Date(dataInicial)
+
+        dataOk =
+          dataItem >= inicio
+      }
+
+      if (
+        dataFinal &&
+        item.dataPedido
+      ) {
+
+        const dataItem =
+          new Date(item.dataPedido)
+
+        const fim =
+          new Date(dataFinal)
+
+        dataOk =
+          dataItem <= fim
+      }
+
+      return (
+        buscaOk &&
+        cidadeOk &&
+        bairroOk &&
+        valorOk &&
+        vipOk &&
+        dataOk
       )
-    }
-
-    // FILTRO CIDADE
-
-    if (cidade) {
-
-      resultado = resultado.filter(
-        (linha: any) => {
-
-          const endereco =
-            String(
-              linha["Endereço"] ||
-              linha["endereco"] ||
-              ""
-            ).toLowerCase()
-
-          return endereco.includes(
-            cidade.toLowerCase()
-          )
-        }
-      )
-    }
-
-    // FILTRO DATA
-
-    if (dataInicial || dataFinal) {
-
-      resultado = resultado.filter(
-        (linha: any) => {
-
-          const dataTexto =
-            linha["Data"] ||
-            linha["data"]
-
-          const dataLinha =
-            converterData(dataTexto)
-
-          if (!dataLinha)
-            return false
-
-          const inicio =
-            dataInicial
-              ? new Date(dataInicial)
-              : null
-
-          const fim =
-            dataFinal
-              ? new Date(dataFinal)
-              : null
-
-          if (
-            inicio &&
-            dataLinha < inicio
-          ) {
-            return false
-          }
-
-          if (
-            fim &&
-            dataLinha > fim
-          ) {
-            return false
-          }
-
-          return true
-        }
-      )
-    }
-
-    // REMOVER DUPLICADOS
-
-    if (somenteUnicos) {
-
-      const telefones =
-        new Set()
-
-      resultado = resultado.filter(
-        (linha: any) => {
-
-          const telefone =
-            formatarTelefone(
-              linha["fone"] ||
-              linha["celular"] ||
-              linha["telefone"]
-            )
-
-          if (!telefone)
-            return false
-
-          if (
-            telefones.has(telefone)
-          ) {
-            return false
-          }
-
-          telefones.add(telefone)
-
-          return true
-        }
-      )
-    }
-
-    return resultado
+    })
 
   }, [
     dados,
     busca,
+    cidadeFiltro,
+    bairroFiltro,
     valorMinimo,
-    cidade,
+    somenteVIP,
     dataInicial,
     dataFinal,
-    somenteUnicos
   ])
 
   function exportarPlanilha() {
 
-    const dadosExportados =
-      dadosFiltrados.map(
-        (linha: any) => ({
-
-          ...linha,
-
-          celular:
-            formatarTelefone(
-              linha["fone"] ||
-              linha["celular"] ||
-              linha["telefone"]
-            )
-
-        })
-      )
-
     const worksheet =
       XLSX.utils.json_to_sheet(
-        dadosExportados
+        dadosFiltrados
       )
 
     const workbook =
@@ -293,506 +351,527 @@ export default function PlanilhasPage() {
     XLSX.utils.book_append_sheet(
       workbook,
       worksheet,
-      "Campanha"
+      "Clientes"
     )
 
     XLSX.writeFile(
       workbook,
-      "campanha-filtrada.xlsx"
+      `clientes-filtrados-${Date.now()}.xlsx`
     )
+  }
+
+  // EXPORTAÇÃO WHATSAPP
+
+  function exportarWhatsApp() {
+
+    const numeros =
+      dadosFiltrados
+        .map(
+          (item: any) =>
+            item.telefone
+        )
+        .filter(Boolean)
+        .join("\n")
+
+    const blob = new Blob(
+      [numeros],
+      { type: "text/plain" }
+    )
+
+    const link =
+      document.createElement("a")
+
+    link.href =
+      URL.createObjectURL(blob)
+
+    link.download =
+      "numeros-whatsapp.txt"
+
+    link.click()
   }
 
   function limparFiltros() {
 
     setBusca("")
+    setCidadeFiltro("")
+    setBairroFiltro("")
     setValorMinimo("")
-    setCidade("")
+    setSomenteVIP(false)
     setDataInicial("")
     setDataFinal("")
-    setSomenteUnicos(true)
   }
 
-  return (
+  const totalClientes =
+    dadosFiltrados.length
 
-    <div className="flex min-h-screen bg-zinc-50">
+  const totalVIP =
+    dadosFiltrados.filter(
+      (item: any) => item.vip
+    ).length
+
+  const totalValidos =
+    dadosFiltrados.filter(
+      (item: any) =>
+        item.telefoneValido
+    ).length
+
+  const totalInvalidos =
+    dadosFiltrados.filter(
+      (item: any) =>
+        !item.telefoneValido
+    ).length
+
+  const faturamento =
+    dadosFiltrados.reduce(
+      (acc: number, item: any) =>
+        acc + item.valor,
+      0
+    )
+
+  return (
+    <div className="flex min-h-screen bg-zinc-100 text-black">
 
       <Sidebar />
 
-      <main className="flex-1 overflow-auto">
+      <main className="flex-1 p-10 overflow-auto">
 
-        <div className="p-10">
+        {/* HEADER */}
 
-          {/* HEADER */}
+        <div className="mb-10">
 
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-5 mb-10">
+          <div className="flex items-center gap-4 mb-4">
+
+            <div className="bg-green-100 p-4 rounded-3xl">
+
+              <FileSpreadsheet className="w-10 h-10 text-green-600" />
+
+            </div>
 
             <div>
 
-              <h1 className="text-5xl font-bold mb-2 text-zinc-900">
+              <h1 className="text-5xl font-black">
 
-                Gerador de Planilhas
+                Central de Planilhas
 
               </h1>
 
-              <p className="text-zinc-500 text-lg">
+              <p className="text-zinc-500 mt-2 text-lg">
 
-                Sistema inteligente de campanhas e filtros
+                Sistema inteligente de campanhas e leads
 
               </p>
 
             </div>
 
+          </div>
+
+        </div>
+
+        {/* CARDS */}
+
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-6 mb-10">
+
+          <div className="bg-white border border-zinc-200 rounded-3xl p-6 shadow-sm">
+
+            <div className="flex justify-between">
+
+              <div>
+
+                <p className="text-zinc-500">
+
+                  Clientes
+
+                </p>
+
+                <h2 className="text-4xl font-black mt-2">
+
+                  {totalClientes}
+
+                </h2>
+
+              </div>
+
+              <Users className="w-10 h-10 text-blue-500" />
+
+            </div>
+
+          </div>
+
+          <div className="bg-white border border-zinc-200 rounded-3xl p-6 shadow-sm">
+
+            <div className="flex justify-between">
+
+              <div>
+
+                <p className="text-zinc-500">
+
+                  VIP
+
+                </p>
+
+                <h2 className="text-4xl font-black mt-2 text-yellow-500">
+
+                  {totalVIP}
+
+                </h2>
+
+              </div>
+
+              <Crown className="w-10 h-10 text-yellow-500" />
+
+            </div>
+
+          </div>
+
+          <div className="bg-white border border-zinc-200 rounded-3xl p-6 shadow-sm">
+
+            <div className="flex justify-between">
+
+              <div>
+
+                <p className="text-zinc-500">
+
+                  Telefones válidos
+
+                </p>
+
+                <h2 className="text-4xl font-black mt-2 text-green-600">
+
+                  {totalValidos}
+
+                </h2>
+
+              </div>
+
+              <CheckCircle2 className="w-10 h-10 text-green-600" />
+
+            </div>
+
+          </div>
+
+          <div className="bg-white border border-zinc-200 rounded-3xl p-6 shadow-sm">
+
+            <div className="flex justify-between">
+
+              <div>
+
+                <p className="text-zinc-500">
+
+                  Inválidos
+
+                </p>
+
+                <h2 className="text-4xl font-black mt-2 text-red-500">
+
+                  {totalInvalidos}
+
+                </h2>
+
+              </div>
+
+              <AlertTriangle className="w-10 h-10 text-red-500" />
+
+            </div>
+
+          </div>
+
+          <div className="bg-white border border-zinc-200 rounded-3xl p-6 shadow-sm">
+
+            <div className="flex justify-between">
+
+              <div>
+
+                <p className="text-zinc-500">
+
+                  Faturamento
+
+                </p>
+
+                <h2 className="text-3xl font-black mt-2 text-emerald-600">
+
+                  R$ {faturamento.toFixed(2)}
+
+                </h2>
+
+              </div>
+
+              <DollarSign className="w-10 h-10 text-emerald-600" />
+
+            </div>
+
+          </div>
+
+        </div>
+
+        {/* UPLOAD */}
+
+        <div className="bg-white border border-zinc-200 rounded-3xl p-8 mb-10 shadow-sm">
+
+          <div className="flex items-center gap-3 mb-6">
+
+            <Upload className="w-7 h-7 text-green-600" />
+
+            <h2 className="text-2xl font-bold">
+
+              Upload da Planilha
+
+            </h2>
+
+          </div>
+
+          <input
+            type="file"
+            accept=".xlsx,.csv"
+            onChange={lerPlanilha}
+            className="w-full bg-zinc-50 border border-zinc-300 rounded-2xl p-5"
+          />
+
+        </div>
+
+        {/* FILTROS */}
+
+        <div className="bg-white border border-zinc-200 rounded-3xl p-8 mb-10 shadow-sm">
+
+          <div className="flex items-center gap-3 mb-8">
+
+            <Sparkles className="w-7 h-7 text-yellow-500" />
+
+            <h2 className="text-2xl font-bold">
+
+              Filtros Inteligentes
+
+            </h2>
+
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-6 gap-5">
+
+            <input
+              value={busca}
+              onChange={(e) =>
+                setBusca(e.target.value)
+              }
+              placeholder="Buscar cliente..."
+              className="bg-zinc-50 border border-zinc-300 rounded-2xl p-4"
+            />
+
+            <input
+              value={cidadeFiltro}
+              onChange={(e) =>
+                setCidadeFiltro(
+                  e.target.value
+                )
+              }
+              placeholder="Cidade"
+              className="bg-zinc-50 border border-zinc-300 rounded-2xl p-4"
+            />
+
+            <input
+              value={bairroFiltro}
+              onChange={(e) =>
+                setBairroFiltro(
+                  e.target.value
+                )
+              }
+              placeholder="Bairro"
+              className="bg-zinc-50 border border-zinc-300 rounded-2xl p-4"
+            />
+
+            <input
+              type="number"
+              value={valorMinimo}
+              onChange={(e) =>
+                setValorMinimo(
+                  e.target.value
+                )
+              }
+              placeholder="Valor mínimo"
+              className="bg-zinc-50 border border-zinc-300 rounded-2xl p-4"
+            />
+
+            <input
+              type="date"
+              value={dataInicial}
+              onChange={(e) =>
+                setDataInicial(
+                  e.target.value
+                )
+              }
+              className="bg-zinc-50 border border-zinc-300 rounded-2xl p-4"
+            />
+
+            <input
+              type="date"
+              value={dataFinal}
+              onChange={(e) =>
+                setDataFinal(
+                  e.target.value
+                )
+              }
+              className="bg-zinc-50 border border-zinc-300 rounded-2xl p-4"
+            />
+
+          </div>
+
+          {/* BOTÕES */}
+
+          <div className="flex flex-wrap gap-4 mt-8">
+
             <button
               onClick={exportarPlanilha}
-              disabled={
-                dadosFiltrados.length === 0
-              }
-              className="
-                bg-black text-white
-                px-6 py-4 rounded-2xl
-                flex items-center gap-3
-                hover:opacity-90
-                transition-all
-                disabled:opacity-40
-                w-fit
-              "
+              className="bg-green-600 hover:bg-green-500 transition-all px-6 py-4 rounded-2xl font-bold flex items-center gap-3 text-white"
             >
 
-              <Download size={20} />
+              <Download className="w-5 h-5" />
 
-              Exportar Excel
+              Exportar XLSX
+
+            </button>
+
+            <button
+              onClick={exportarWhatsApp}
+              className="bg-green-500 hover:bg-green-400 transition-all px-6 py-4 rounded-2xl font-bold flex items-center gap-3 text-white"
+            >
+
+              <MessageCircle className="w-5 h-5" />
+
+              Exportar WhatsApp
+
+            </button>
+
+            <button
+              onClick={() =>
+                setSomenteVIP(
+                  !somenteVIP
+                )
+              }
+              className={`px-6 py-4 rounded-2xl font-bold transition-all ${
+                somenteVIP
+                  ? "bg-yellow-400 text-black"
+                  : "bg-zinc-200"
+              }`}
+            >
+
+              Somente VIP
+
+            </button>
+
+            <button
+              onClick={limparFiltros}
+              className="bg-red-500 hover:bg-red-400 transition-all px-6 py-4 rounded-2xl font-bold flex items-center gap-3 text-white"
+            >
+
+              <Trash2 className="w-5 h-5" />
+
+              Limpar
 
             </button>
 
           </div>
 
-          {/* CARDS */}
+        </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-10">
+        {/* TABELA */}
 
-            <div className="bg-white rounded-3xl p-7 border border-zinc-100 shadow-sm">
+        {dadosFiltrados.length > 0 && (
 
-              <div className="flex items-center justify-between mb-4">
-
-                <Users className="text-blue-600" />
-
-                <span className="text-zinc-400 text-sm">
-                  Clientes
-                </span>
-
-              </div>
-
-              <h2 className="text-zinc-500 mb-2">
-                Total Filtrado
-              </h2>
-
-              <p className="text-4xl font-bold text-zinc-900">
-                {dadosFiltrados.length}
-              </p>
-
-            </div>
-
-            <div className="bg-white rounded-3xl p-7 border border-zinc-100 shadow-sm">
-
-              <div className="flex items-center justify-between mb-4">
-
-                <DollarSign className="text-green-600" />
-
-                <span className="text-zinc-400 text-sm">
-                  Ticket
-                </span>
-
-              </div>
-
-              <h2 className="text-zinc-500 mb-2">
-                Valor Mínimo
-              </h2>
-
-              <p className="text-4xl font-bold text-green-600">
-                R$ {valorMinimo || 0}
-              </p>
-
-            </div>
-
-            <div className="bg-white rounded-3xl p-7 border border-zinc-100 shadow-sm">
-
-              <div className="flex items-center justify-between mb-4">
-
-                <FileSpreadsheet className="text-purple-600" />
-
-                <span className="text-zinc-400 text-sm">
-                  Campanha
-                </span>
-
-              </div>
-
-              <h2 className="text-zinc-500 mb-2">
-                Telefones Únicos
-              </h2>
-
-              <p className="text-4xl font-bold text-purple-600">
-                {somenteUnicos
-                  ? "SIM"
-                  : "NÃO"}
-              </p>
-
-            </div>
-
-          </div>
-
-          {/* UPLOAD */}
-
-          <div className="bg-white border border-zinc-100 rounded-3xl p-10 mb-10 shadow-sm">
-
-            <div className="flex items-center gap-3 mb-6">
-
-              <Upload className="text-zinc-700" />
-
-              <h2 className="text-2xl font-bold">
-                Upload da Planilha
-              </h2>
-
-            </div>
-
-            <input
-              type="file"
-              accept=".xlsx,.csv,.xls"
-              onChange={lerPlanilha}
-              className="
-                border border-zinc-200
-                p-4 rounded-2xl
-                w-full max-w-md
-              "
-            />
-
-          </div>
-
-          {/* FILTROS */}
-
-          <div className="bg-white border border-zinc-100 rounded-3xl p-10 mb-10 shadow-sm">
+          <div className="bg-white border border-zinc-200 rounded-3xl p-8 overflow-auto shadow-sm">
 
             <div className="flex items-center justify-between mb-8">
 
-              <div className="flex items-center gap-3">
+              <div>
 
-                <Filter className="text-zinc-700" />
+                <h2 className="text-3xl font-black">
 
-                <h2 className="text-2xl font-bold">
-                  Filtros Inteligentes
+                  Leads Carregados
+
                 </h2>
 
+                <p className="text-zinc-500 mt-2">
+
+                  Clientes prontos para campanhas
+
+                </p>
+
               </div>
 
-              <button
-                onClick={limparFiltros}
-                className="
-                  bg-red-50 text-red-600
-                  px-5 py-3 rounded-2xl
-                  flex items-center gap-2
-                  hover:bg-red-100
-                "
-              >
-
-                <Trash2 size={18} />
-
-                Limpar
-
-              </button>
+              <TrendingUp className="w-8 h-8 text-green-500" />
 
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+            <table className="min-w-full">
 
-              {/* BUSCA */}
+              <thead>
 
-              <div>
+                <tr className="border-b border-zinc-200">
 
-                <label className="text-sm text-zinc-500 mb-2 block">
-                  Buscar Cliente
-                </label>
+                  {Object.keys(
+                    dadosFiltrados[0]
+                  ).map((coluna) => (
 
-                <div className="relative">
+                    <th
+                      key={coluna}
+                      className="text-left p-4 text-zinc-500 uppercase text-xs"
+                    >
 
-                  <Search
-                    size={18}
-                    className="absolute left-4 top-4 text-zinc-400"
-                  />
+                      {coluna}
 
-                  <input
-                    type="text"
-                    value={busca}
-                    onChange={(e) =>
-                      setBusca(
-                        e.target.value
-                      )
-                    }
-                    placeholder="Pesquisar cliente..."
-                    className="
-                      w-full border border-zinc-200
-                      rounded-2xl pl-12 pr-4 py-4
-                      outline-none
-                    "
-                  />
+                    </th>
 
-                </div>
+                  ))}
 
-              </div>
+                </tr>
 
-              {/* VALOR */}
+              </thead>
 
-              <div>
+              <tbody>
 
-                <label className="text-sm text-zinc-500 mb-2 block">
-                  Valor Mínimo
-                </label>
+                {dadosFiltrados.map(
+                  (
+                    linha: any,
+                    index
+                  ) => (
 
-                <input
-                  type="number"
-                  value={valorMinimo}
-                  onChange={(e) =>
-                    setValorMinimo(
-                      e.target.value
-                    )
-                  }
-                  placeholder="300"
-                  className="
-                    w-full border border-zinc-200
-                    rounded-2xl p-4
-                    outline-none
-                  "
-                />
+                    <tr
+                      key={index}
+                      className="border-b border-zinc-100 hover:bg-zinc-50 transition-all"
+                    >
 
-              </div>
+                      {Object.values(
+                        linha
+                      ).map(
+                        (
+                          valor: any,
+                          i
+                        ) => (
 
-              {/* CIDADE */}
+                          <td
+                            key={i}
+                            className="p-4 text-sm whitespace-nowrap"
+                          >
 
-              <div>
+                            {String(valor)}
 
-                <label className="text-sm text-zinc-500 mb-2 block">
-                  Cidade
-                </label>
+                          </td>
 
-                <div className="relative">
+                        )
+                      )}
 
-                  <MapPin
-                    size={18}
-                    className="absolute left-4 top-4 text-zinc-400"
-                  />
+                    </tr>
 
-                  <input
-                    type="text"
-                    value={cidade}
-                    onChange={(e) =>
-                      setCidade(
-                        e.target.value
-                      )
-                    }
-                    placeholder="Salvador"
-                    className="
-                      w-full border border-zinc-200
-                      rounded-2xl pl-12 pr-4 py-4
-                      outline-none
-                    "
-                  />
+                  )
+                )}
 
-                </div>
+              </tbody>
 
-              </div>
-
-              {/* DATA INICIAL */}
-
-              <div>
-
-                <label className="text-sm text-zinc-500 mb-2 block">
-                  Data Inicial
-                </label>
-
-                <div className="relative">
-
-                  <Calendar
-                    size={18}
-                    className="absolute left-4 top-4 text-zinc-400"
-                  />
-
-                  <input
-                    type="date"
-                    value={dataInicial}
-                    onChange={(e) =>
-                      setDataInicial(
-                        e.target.value
-                      )
-                    }
-                    className="
-                      w-full border border-zinc-200
-                      rounded-2xl pl-12 pr-4 py-4
-                      outline-none
-                    "
-                  />
-
-                </div>
-
-              </div>
-
-              {/* DATA FINAL */}
-
-              <div>
-
-                <label className="text-sm text-zinc-500 mb-2 block">
-                  Data Final
-                </label>
-
-                <div className="relative">
-
-                  <Calendar
-                    size={18}
-                    className="absolute left-4 top-4 text-zinc-400"
-                  />
-
-                  <input
-                    type="date"
-                    value={dataFinal}
-                    onChange={(e) =>
-                      setDataFinal(
-                        e.target.value
-                      )
-                    }
-                    className="
-                      w-full border border-zinc-200
-                      rounded-2xl pl-12 pr-4 py-4
-                      outline-none
-                    "
-                  />
-
-                </div>
-
-              </div>
-
-              {/* DUPLICADOS */}
-
-              <div className="flex items-end">
-
-                <label className="
-                  flex items-center gap-3
-                  bg-zinc-100 px-5 py-4
-                  rounded-2xl cursor-pointer
-                  w-full
-                ">
-
-                  <input
-                    type="checkbox"
-                    checked={somenteUnicos}
-                    onChange={() =>
-                      setSomenteUnicos(
-                        !somenteUnicos
-                      )
-                    }
-                  />
-
-                  Remover Duplicados
-
-                </label>
-
-              </div>
-
-            </div>
+            </table>
 
           </div>
 
-          {/* PREVIEW */}
-
-          {dadosFiltrados.length > 0 && (
-
-            <div className="
-              bg-white border border-zinc-100
-              rounded-3xl p-10 shadow-sm
-              overflow-auto
-            ">
-
-              <h2 className="text-3xl font-bold mb-8">
-                Preview da Campanha
-              </h2>
-
-              <table className="min-w-full text-sm">
-
-                <thead>
-
-                  <tr className="border-b border-zinc-200 bg-zinc-50">
-
-                    {Object.keys(
-                      dadosFiltrados[0]
-                    ).map((coluna) => (
-
-                      <th
-                        key={coluna}
-                        className="
-                          text-left p-4
-                          font-bold text-zinc-700
-                          whitespace-nowrap
-                        "
-                      >
-
-                        {coluna}
-
-                      </th>
-
-                    ))}
-
-                  </tr>
-
-                </thead>
-
-                <tbody>
-
-                  {dadosFiltrados.map(
-                    (
-                      linha: any,
-                      index
-                    ) => (
-
-                      <tr
-                        key={index}
-                        className="
-                          border-b border-zinc-100
-                          hover:bg-zinc-50
-                        "
-                      >
-
-                        {Object.values(linha).map(
-                          (
-                            valor: any,
-                            i
-                          ) => (
-
-                            <td
-                              key={i}
-                              className="p-4 whitespace-nowrap"
-                            >
-
-                              {String(valor)}
-
-                            </td>
-
-                          )
-                        )}
-
-                      </tr>
-
-                    )
-                  )}
-
-                </tbody>
-
-              </table>
-
-            </div>
-
-          )}
-
-        </div>
+        )}
 
       </main>
 
     </div>
   )
 }
-
